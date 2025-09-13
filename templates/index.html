@@ -971,25 +971,46 @@
             },
 
             updateQuickStats: (stats) => {
-                document.getElementById('quickStats').style.display = 'flex';
+                console.log('📊 Updating stats:', stats); // Debug
+                const quickStatsElement = document.getElementById('quickStats');
+                if (quickStatsElement) {
+                    quickStatsElement.style.display = 'flex';
+                    console.log('Quick stats made visible');
+                }
 
-                // Animate values
-                setTimeout(() => {
-                    Utils.animateValue(document.getElementById('totalRecords'), 0, stats.total_records);
-                }, 200);
-                setTimeout(() => {
-                    Utils.animateValue(document.getElementById('totalColumns'), 0, stats.total_columns);
-                }, 400);
-                setTimeout(() => {
-                    Utils.animateValue(document.getElementById('missingValues'), 0, stats.missing_values);
-                }, 600);
-                setTimeout(() => {
-                    document.getElementById('memoryUsage').textContent = stats.memory_usage;
-                }, 800);
+                // Direct updates without animation first to test
+                const totalRecords = document.getElementById('totalRecords');
+                const totalColumns = document.getElementById('totalColumns');
+                const missingValues = document.getElementById('missingValues');
+                const memoryUsage = document.getElementById('memoryUsage');
+
+                if (totalRecords) totalRecords.textContent = Utils.formatNumber(stats.total_records);
+                if (totalColumns) totalColumns.textContent = Utils.formatNumber(stats.total_columns);
+                if (missingValues) missingValues.textContent = Utils.formatNumber(stats.missing_values);
+                if (memoryUsage) memoryUsage.textContent = stats.memory_usage;
+
+                console.log('✅ All stats updated');
             },
 
             displayDataOverview: (data) => {
+                console.log('📋 displayDataOverview called with:', data); // Debug log
+
                 const container = document.getElementById('dataOverviewContent');
+                if (!container) {
+                    console.error('❌ dataOverviewContent element not found!');
+                    return;
+                }
+
+                // Check if data has required properties
+                if (!data.columns || !Array.isArray(data.columns)) {
+                    console.error('❌ data.columns is missing or invalid:', data.columns);
+                    return;
+                }
+
+                if (!data.sample_data || !Array.isArray(data.sample_data)) {
+                    console.error('❌ data.sample_data is missing or invalid:', data.sample_data);
+                    return;
+                }
 
                 const overviewHtml = `
                     <div class="row">
@@ -1008,7 +1029,7 @@
                                             ${data.columns.map(col => `
                                                 <tr>
                                                     <td>${col}</td>
-                                                    <td><span class="badge bg-secondary">${this.getColumnType(col)}</span></td>
+                                                    <td><span class="badge bg-secondary">${DataManager.getColumnType(col)}</span></td>
                                                 </tr>
                                             `).join('')}
                                         </tbody>
@@ -1030,7 +1051,7 @@
                                             ${data.sample_data.slice(0, 5).map(row => `
                                                 <tr>
                                                     ${data.columns.slice(0, 5).map(col => `
-                                                        <td>${this.truncateText(row[col], 20)}</td>
+                                                        <td>${DataManager.truncateText(row[col], 20)}</td>
                                                     `).join('')}
                                                 </tr>
                                             `).join('')}
@@ -1043,6 +1064,7 @@
                 `;
 
                 container.innerHTML = overviewHtml;
+                console.log('✅ Data overview HTML updated'); // Debug log
             },
 
             getColumnType: (column) => {
