@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mental Health Analytics Platform</title>
-    
+
     <!-- External Libraries -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.24.1/plotly.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    
+
     <!-- Custom Styles -->
     <style>
         :root {
@@ -498,16 +498,16 @@
             .sidebar {
                 transform: translateX(-100%);
             }
-            
+
             .main-content {
                 margin-left: 0;
                 padding: 15px;
             }
-            
+
             .header-section h1 {
                 font-size: 2rem;
             }
-            
+
             .stats-card .value {
                 font-size: 1.8rem;
             }
@@ -549,37 +549,37 @@
                 Mental Analytics
             </h4>
         </div>
-        
+
         <div class="nav-item active" data-section="dashboard">
             <i class="fas fa-tachometer-alt"></i>
             <span>Dashboard</span>
         </div>
-        
+
         <div class="nav-item" data-section="data-overview">
             <i class="fas fa-database"></i>
             <span>Tổng quan dữ liệu</span>
         </div>
-        
+
         <div class="nav-item" data-section="visualizations">
             <i class="fas fa-chart-pie"></i>
             <span>Trực quan hóa</span>
         </div>
-        
+
         <div class="nav-item" data-section="ml-analysis">
             <i class="fas fa-robot"></i>
             <span>Phân tích ML</span>
         </div>
-        
+
         <div class="nav-item" data-section="clustering">
             <i class="fas fa-project-diagram"></i>
             <span>Phân nhóm</span>
         </div>
-        
+
         <div class="nav-item" data-section="statistical-tests">
             <i class="fas fa-calculator"></i>
             <span>Kiểm định thống kê</span>
         </div>
-        
+
         <div class="nav-item" data-section="recommendations">
             <i class="fas fa-lightbulb"></i>
             <span>Khuyến nghị</span>
@@ -597,7 +597,7 @@
         <div class="header-section animate__animated animate__fadeInDown">
             <h1><i class="fas fa-brain"></i> Mental Health Analytics Platform</h1>
             <p>Hệ thống phân tích chuyên sâu sức khỏe tinh thần người lao động với AI và Machine Learning</p>
-            
+
             <div style="margin-top: 25px;">
                 <button id="loadDataBtn" class="btn-glass me-3">
                     <i class="fas fa-upload"></i> Tải dữ liệu
@@ -736,7 +736,7 @@
                     <h3 class="chart-title">Phân tích Machine Learning nâng cao</h3>
                 </div>
             </div>
-            
+
             <div id="mlAnalysisContent">
                 <!-- ML analysis content will be populated here -->
             </div>
@@ -749,7 +749,7 @@
                     <h3 class="chart-title">Phân nhóm nhân viên thông minh</h3>
                 </div>
             </div>
-            
+
             <div id="clusteringContent">
                 <!-- Clustering content will be populated here -->
             </div>
@@ -762,7 +762,7 @@
                     <h3 class="chart-title">Kiểm định thống kê</h3>
                 </div>
             </div>
-            
+
             <div id="statisticalTestsContent">
                 <!-- Statistical tests content will be populated here -->
             </div>
@@ -775,7 +775,7 @@
                     <h3 class="chart-title">Khuyến nghị và Hành động</h3>
                 </div>
             </div>
-            
+
             <div id="recommendationsContent">
                 <!-- Recommendations content will be populated here -->
             </div>
@@ -784,7 +784,7 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Custom JavaScript -->
     <script>
         // Application State
@@ -804,7 +804,7 @@
             showAlert: (message, type = 'info', duration = 5000) => {
                 const alertContainer = document.getElementById('alertContainer');
                 const alertId = 'alert_' + Date.now();
-                
+
                 const alertHtml = `
                     <div id="${alertId}" class="alert-glass alert-${type} animate__animated animate__slideInDown">
                         <div class="d-flex align-items-center">
@@ -816,9 +816,9 @@
                         </div>
                     </div>
                 `;
-                
+
                 alertContainer.insertAdjacentHTML('beforeend', alertHtml);
-                
+
                 if (duration > 0) {
                     setTimeout(() => {
                         const alertElement = document.getElementById(alertId);
@@ -847,18 +847,18 @@
             animateValue: (element, start, end, duration = 1000) => {
                 const range = end - start;
                 let startTime;
-                
+
                 const step = (timestamp) => {
                     if (!startTime) startTime = timestamp;
                     const progress = Math.min((timestamp - startTime) / duration, 1);
                     const value = Math.floor(progress * range + start);
                     element.textContent = this.formatNumber(value);
-                    
+
                     if (progress < 1) {
                         requestAnimationFrame(step);
                     }
                 };
-                
+
                 requestAnimationFrame(step);
             }
         };
@@ -870,7 +870,7 @@
                 document.getElementById('sidebarToggle').addEventListener('click', () => {
                     const sidebar = document.getElementById('sidebar');
                     const mainContent = document.getElementById('mainContent');
-                    
+
                     sidebar.classList.toggle('collapsed');
                     mainContent.classList.toggle('expanded');
                 });
@@ -898,9 +898,9 @@
 
                 // Show selected section
                 document.getElementById(`${section}-section`).style.display = 'block';
-                
+
                 AppState.currentSection = section;
-                
+
                 // Load section-specific content if needed
                 this.loadSectionContent(section);
             },
@@ -943,20 +943,20 @@
                 try {
                     const response = await fetch('/api/load_data');
                     const data = await response.json();
-                    
+
                     if (data.status === 'success') {
                         AppState.dataLoaded = true;
                         Utils.showAlert(`✅ ${data.message}`, 'success');
-                        
+
                         // Update quick stats
                         this.updateQuickStats(data.basic_stats);
-                        
+
                         // Show data overview
                         this.displayDataOverview(data);
-                        
+
                         // Enable analysis button
                         document.getElementById('startAnalysisBtn').disabled = false;
-                        
+
                         return true;
                     } else {
                         Utils.showAlert(`❌ ${data.message}`, 'error');
@@ -972,7 +972,7 @@
 
             updateQuickStats: (stats) => {
                 document.getElementById('quickStats').style.display = 'flex';
-                
+
                 // Animate values
                 setTimeout(() => {
                     Utils.animateValue(document.getElementById('totalRecords'), 0, stats.total_records);
@@ -990,7 +990,7 @@
 
             displayDataOverview: (data) => {
                 const container = document.getElementById('dataOverviewContent');
-                
+
                 const overviewHtml = `
                     <div class="row">
                         <div class="col-md-6">
@@ -1041,7 +1041,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 container.innerHTML = overviewHtml;
             },
 
@@ -1052,8 +1052,8 @@
 
             truncateText: (text, maxLength) => {
                 if (!text) return 'N/A';
-                return text.toString().length > maxLength ? 
-                    text.toString().substring(0, maxLength) + '...' : 
+                return text.toString().length > maxLength ?
+                    text.toString().substring(0, maxLength) + '...' :
                     text.toString();
             }
         };
@@ -1079,10 +1079,10 @@
                     ];
 
                     await Promise.all(promises);
-                    
+
                     document.getElementById('exportReportBtn').disabled = false;
                     Utils.showAlert('✅ Phân tích hoàn tất! Tất cả kết quả đã sẵn sàng.', 'success');
-                    
+
                 } catch (error) {
                     Utils.showAlert(`❌ Lỗi phân tích: ${error.message}`, 'error');
                 } finally {
@@ -1094,7 +1094,7 @@
                 try {
                     const response = await fetch('/api/advanced_visualizations');
                     const data = await response.json();
-                    
+
                     if (data.status === 'success') {
                         AppState.analysisResults.visualizations = data.plots;
                         this.displayVisualizations(data.plots);
@@ -1112,7 +1112,7 @@
                 if (plots.dashboard_overview) {
                     const container = document.getElementById('dashboardVizContainer');
                     container.innerHTML = '<div class="chart-container"><div id="dashboardPlot" class="chart-title">Dashboard Tổng quan</div></div>';
-                    
+
                     const plotData = JSON.parse(plots.dashboard_overview);
                     Plotly.newPlot('dashboardPlot', plotData.data, plotData.layout, {responsive: true});
                 }
@@ -1121,7 +1121,7 @@
                 if (plots.scatter_3d) {
                     const container = document.getElementById('3dVizContainer');
                     container.innerHTML = '<div class="chart-container"><div id="3dPlot" class="chart-title">Phân tích 3D</div></div>';
-                    
+
                     const plotData = JSON.parse(plots.scatter_3d);
                     Plotly.newPlot('3dPlot', plotData.data, plotData.layout, {responsive: true});
                 }
@@ -1130,7 +1130,7 @@
                 if (plots.correlation_heatmap) {
                     const container = document.getElementById('correlationVizContainer');
                     container.innerHTML = '<div class="chart-container"><div id="correlationPlot" class="chart-title">Ma trận tương quan</div></div>';
-                    
+
                     const plotData = JSON.parse(plots.correlation_heatmap);
                     Plotly.newPlot('correlationPlot', plotData.data, plotData.layout, {responsive: true});
                 }
@@ -1167,7 +1167,7 @@
                 try {
                     const response = await fetch('/api/advanced_analysis');
                     const data = await response.json();
-                    
+
                     if (data.status === 'success') {
                         AppState.analysisResults.mlAnalysis = data;
                         this.displayMLAnalysis(data);
@@ -1182,7 +1182,7 @@
 
             displayMLAnalysis: (data) => {
                 const container = document.getElementById('mlAnalysisContent');
-                
+
                 // Model Performance Comparison
                 let modelsHtml = '<div class="row">';
                 Object.entries(data.models_performance).forEach(([modelName, performance]) => {
@@ -1282,7 +1282,7 @@
                 try {
                     const response = await fetch('/api/clustering_analysis');
                     const data = await response.json();
-                    
+
                     if (data.status === 'success') {
                         AppState.analysisResults.clustering = data;
                         this.displayClustering(data);
@@ -1297,7 +1297,7 @@
 
             displayClustering: (data) => {
                 const container = document.getElementById('clusteringContent');
-                
+
                 // Cluster Summary
                 let summaryHtml = '<div class="row">';
                 Object.entries(data.clustering_results.cluster_summary).forEach(([clusterName, summary]) => {
@@ -1375,7 +1375,7 @@
                 try {
                     const response = await fetch('/api/statistical_tests');
                     const data = await response.json();
-                    
+
                     if (data.status === 'success') {
                         AppState.analysisResults.statisticalTests = data.tests;
                         this.displayStatisticalTests(data.tests);
@@ -1390,7 +1390,7 @@
 
             displayStatisticalTests: (tests) => {
                 const container = document.getElementById('statisticalTestsContent');
-                
+
                 let testsHtml = '';
                 Object.entries(tests).forEach(([testKey, testData]) => {
                     if (testKey === 'error') {
@@ -1490,13 +1490,13 @@
                             body { font-family: 'Segoe UI', sans-serif; margin: 40px; }
                             .header { text-align: center; margin-bottom: 40px; }
                             .section { margin: 30px 0; }
-                            .chart-placeholder { 
-                                background: #f0f0f0; 
-                                height: 300px; 
-                                display: flex; 
-                                align-items: center; 
-                                justify-content: center; 
-                                margin: 20px 0; 
+                            .chart-placeholder {
+                                background: #f0f0f0;
+                                height: 300px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                margin: 20px 0;
                             }
                         </style>
                     </head>
@@ -1505,17 +1505,17 @@
                             <h1>Báo cáo Phân tích Sức khỏe Tinh thần Người lao động</h1>
                             <p>Được tạo vào: ${data.timestamp}</p>
                         </div>
-                        
+
                         <div class="section">
                             <h2>Tóm tắt Executive</h2>
                             <p>Báo cáo này cung cấp phân tích toàn diện về các yếu tố ảnh hưởng đến sức khỏe tinh thần của người lao động...</p>
                         </div>
-                        
+
                         <div class="section">
                             <h2>Phân tích Machine Learning</h2>
                             <div class="chart-placeholder">Biểu đồ Feature Importance</div>
                         </div>
-                        
+
                         <div class="section">
                             <h2>Khuyến nghị</h2>
                             <!-- Recommendations content -->
@@ -1535,7 +1535,7 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
-                
+
                 Utils.showAlert('✅ Báo cáo đã được tải xuống thành công!', 'success');
             }
         };
@@ -1543,16 +1543,16 @@
         // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
             Navigation.init();
-            
+
             // Load data button
             document.getElementById('loadDataBtn').addEventListener('click', DataManager.loadData);
-            
+
             // Start analysis button
             document.getElementById('startAnalysisBtn').addEventListener('click', DataAnalysis.startFullAnalysis);
-            
+
             // Export report button
             document.getElementById('exportReportBtn').addEventListener('click', ReportExporter.exportReport);
-            
+
             // Feature cards click events
             document.querySelectorAll('.feature-card').forEach(card => {
                 card.addEventListener('click', (e) => {
