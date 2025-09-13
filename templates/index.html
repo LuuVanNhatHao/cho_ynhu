@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Analytics Platform</title>
+    
+    <!-- External Libraries -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.24.1/plotly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f093fb;
+            --success-color: #4CAF50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism Effects */
+        .glass-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            transition: all 0.3s ease;
+        }
+
+        .glass-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.5);
+        }
+
+        /* Navigation Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            padding: 20px;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            z-index: 1001;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-item {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(10px);
+        }
+
+        .nav-item i {
+            font-size: 1.2rem;
+            width: 25px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 300px;
+            min-height: 100vh;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.expanded {
+            margin-left: 20px;
+        }
+
+        /* Header */
+        .header-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .header-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header-section p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Cards */
+        .stats-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        }
+
+        .stats-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .stats-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+            text-shadow: 0 0 20px rgba(240, 147, 251, 0.5);
+        }
+
+        .stats-card .value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stats-card .label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* Chart Containers */
+        .chart-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 25px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--success-color), var(--warning-color));
+        }
+
+        .chart-title {
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        /* Buttons */
+        .btn-glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-glass::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-glass:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            color: white;
+        }
+
+        .btn-glass:hover::before {
+            left: 100%;
+        }
+
+        .btn-glass:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading Animation */
+        .loading-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-left: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        /* Alert Messages */
+        .alert-glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            color: white;
+            padding: 15px 20px;
+            margin: 15px 0;
+            animation: slideInDown 0.5s ease;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Tabs */
+        .nav-tabs-glass {
+            border-bottom: none;
+            margin-bottom: 20px;
+        }
+
+        .nav-tabs-glass .nav-link {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            color: white;
+            margin-right: 10px;
+            border-radius: 15px 15px 0 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs-glass .nav-link:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-tabs-glass .nav-link.active {
+            background: rgba(255,255,255,0.3);
+            border-bottom: 3px solid var(--accent-color);
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: scale(1.05);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(240, 147, 251, 0.5);
+        }
+
+        .feature-title {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .feature-description {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        /* Progress Bar */
+        .progress-glass {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar-glass {
+            background: linear-gradient(90deg, var(--success-color), var(--accent-color));
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(240, 147, 251, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(240, 147, 251, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(240, 147, 251, 0); }
+        }
+
+        /* Recommendation Cards */
+        .recommendation-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid var(--success-color);
+            animation: fadeInUp 0.6s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .recommendation-priority {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .priority-high {
+            background: rgba(244, 67, 54, 0.2);
+            color: #ff5722;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .priority-medium {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        /* Model Performance Cards */
+        .model-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-card.best-model {
+            border: 2px solid var(--success-color);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .model-card.best-model::before {
+            content: '👑';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+            
+            .header-section h1 {
+                font-size: 2rem;
+            }
+            
+            .stats-card .value {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingContainer" class="loading-container">
+        <div>
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Đang xử lý dữ liệu...</div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div id="sidebar" class="sidebar">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h4 style="color: white; font-weight: 700;">
+                <i class="fas fa-brain" style="color: var(--accent-color);"></i>
+                Mental Analytics
+            </h4>
+        </div>
+        
+        <div class="nav-item active" data-section="dashboard">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </div>
+        
+        <div class="nav-item" data-section="data-overview">
+            <i class="fas fa-database"></i>
+            <span>Tổng quan dữ liệu</span>
+        </div>
+        
+        <div class="nav-item" data-section="visualizations">
+            <i class="fas fa-chart-pie"></i>
+            <span>Trực quan hóa</span>
+        </div>
+        
+        <div class="nav-item" data-section="ml-analysis">
+            <i class="fas fa-robot"></i>
+            <span>Phân tích ML</span>
+        </div>
+        
+        <div class="nav-item" data-section="clustering">
+            <i class="fas fa-project-diagram"></i>
+            <span>Phân nhóm</span>
+        </div>
+        
+        <div class="nav-item" data-section="statistical-tests">
+            <i class="fas fa-calculator"></i>
+            <span>Kiểm định thống kê</span>
+        </div>
+        
+        <div class="nav-item" data-section="recommendations">
+            <i class="fas fa-lightbulb"></i>
+            <span>Khuyến nghị</span>
+        </div>
+    </div>
+
+    <!-- Sidebar Toggle -->
+    <div id="sidebarToggle" class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="main-content">
+        <!-- Header -->
+        <div class="header-section animate__animated animate__fadeInDown">
+            <h1><i class="fas fa-brain"></i> Mental Health Analytics Platform</h1>
+            <p>Hệ thống phân tích chuyên sâu sức khỏe tinh thần người lao động với AI và Machine Learning</p>
+            
+            <div style="margin-top: 25px;">
+                <button id="loadDataBtn" class="btn-glass me-3">
+                    <i class="fas fa-upload"></i> Tải dữ liệu
+                </button>
+                <button id="startAnalysisBtn" class="btn-glass me-3" disabled>
+                    <i class="fas fa-play"></i> Bắt đầu phân tích
+                </button>
+                <button id="exportReportBtn" class="btn-glass" disabled>
+                    <i class="fas fa-download"></i> Xuất báo cáo
+                </button>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alertContainer"></div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="content-section">
+            <!-- Quick Stats -->
+            <div id="quickStats" class="row" style="display: none;">
+                <div class="col-md-3">
+                    <div class="stats-card animate__animated animate__fadeInUp">
+                        <div class="icon"><i class="fas fa-users"></i></div>
+                        <div class="value" id="totalRecords">0</div>
+                        <div class="label">Tổng số mẫu</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card animate__animated animate__fadeInUp animate__delay-1s">
+                        <div class="icon"><i class="fas fa-columns"></i></div>
+                        <div class="value" id="totalColumns">0</div>
+                        <div class="label">Số cột dữ liệu</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card animate__animated animate__fadeInUp animate__delay-2s">
+                        <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="value" id="missingValues">0</div>
+                        <div class="label">Giá trị thiếu</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card animate__animated animate__fadeInUp animate__delay-3s">
+                        <div class="icon"><i class="fas fa-memory"></i></div>
+                        <div class="value" id="memoryUsage">0 MB</div>
+                        <div class="label">Dung lượng</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Overview -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="feature-card" data-feature="advanced-viz">
+                        <div class="feature-icon"><i class="fas fa-chart-area"></i></div>
+                        <div class="feature-title">Trực quan hóa nâng cao</div>
+                        <div class="feature-description">Biểu đồ 3D, Sunburst, Heatmap tương tác và Dashboard tổng quan</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card" data-feature="ml-models">
+                        <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                        <div class="feature-title">Machine Learning</div>
+                        <div class="feature-description">Random Forest, Gradient Boosting, Logistic Regression với cross-validation</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card" data-feature="clustering">
+                        <div class="feature-icon"><i class="fas fa-sitemap"></i></div>
+                        <div class="feature-title">Phân nhóm thông minh</div>
+                        <div class="feature-description">K-means clustering với PCA projection và silhouette analysis</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Overview Section -->
+        <div id="data-overview-section" class="content-section" style="display: none;">
+            <div class="chart-container">
+                <h3 class="chart-title">Thông tin tổng quan dữ liệu</h3>
+                <div id="dataOverviewContent">
+                    <!-- Data overview content will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualizations Section -->
+        <div id="visualizations-section" class="content-section" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <ul class="nav nav-tabs nav-tabs-glass" id="vizTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#dashboard-viz">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#3d-viz">
+                                <i class="fas fa-cube"></i> Biểu đồ 3D
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#correlation-viz">
+                                <i class="fas fa-project-diagram"></i> Tương quan
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#advanced-viz">
+                                <i class="fas fa-chart-pie"></i> Nâng cao
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="dashboard-viz">
+                    <div id="dashboardVizContainer"></div>
+                </div>
+                <div class="tab-pane fade" id="3d-viz">
+                    <div id="3dVizContainer"></div>
+                </div>
+                <div class="tab-pane fade" id="correlation-viz">
+                    <div id="correlationVizContainer"></div>
+                </div>
+                <div class="tab-pane fade" id="advanced-viz">
+                    <div id="advancedVizContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ML Analysis Section -->
+        <div id="ml-analysis-section" class="content-section" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h3 class="chart-title">Phân tích Machine Learning nâng cao</h3>
+                </div>
+            </div>
+            
+            <div id="mlAnalysisContent">
+                <!-- ML analysis content will be populated here -->
+            </div>
+        </div>
+
+        <!-- Clustering Section -->
+        <div id="clustering-section" class="content-section" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h3 class="chart-title">Phân nhóm nhân viên thông minh</h3>
+                </div>
+            </div>
+            
+            <div id="clusteringContent">
+                <!-- Clustering content will be populated here -->
+            </div>
+        </div>
+
+        <!-- Statistical Tests Section -->
+        <div id="statistical-tests-section" class="content-section" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h3 class="chart-title">Kiểm định thống kê</h3>
+                </div>
+            </div>
+            
+            <div id="statisticalTestsContent">
+                <!-- Statistical tests content will be populated here -->
+            </div>
+        </div>
+
+        <!-- Recommendations Section -->
+        <div id="recommendations-section" class="content-section" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h3 class="chart-title">Khuyến nghị và Hành động</h3>
+                </div>
+            </div>
+            
+            <div id="recommendationsContent">
+                <!-- Recommendations content will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Application State
+        const AppState = {
+            dataLoaded: false,
+            currentSection: 'dashboard',
+            analysisResults: {},
+            chartInstances: {}
+        };
+
+        // Utility Functions
+        const Utils = {
+            showLoading: (show = true) => {
+                document.getElementById('loadingContainer').style.display = show ? 'flex' : 'none';
+            },
+
+            showAlert: (message, type = 'info', duration = 5000) => {
+                const alertContainer = document.getElementById('alertContainer');
+                const alertId = 'alert_' + Date.now();
+                
+                const alertHtml = `
+                    <div id="${alertId}" class="alert-glass alert-${type} animate__animated animate__slideInDown">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-${this.getAlertIcon(type)} me-3"></i>
+                            <div>${message}</div>
+                            <button class="btn btn-sm btn-glass ms-auto" onclick="this.parentElement.parentElement.remove()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                alertContainer.insertAdjacentHTML('beforeend', alertHtml);
+                
+                if (duration > 0) {
+                    setTimeout(() => {
+                        const alertElement = document.getElementById(alertId);
+                        if (alertElement) {
+                            alertElement.classList.add('animate__fadeOutUp');
+                            setTimeout(() => alertElement.remove(), 500);
+                        }
+                    }, duration);
+                }
+            },
+
+            getAlertIcon: (type) => {
+                const icons = {
+                    'success': 'check-circle',
+                    'error': 'exclamation-triangle',
+                    'warning': 'exclamation-circle',
+                    'info': 'info-circle'
+                };
+                return icons[type] || 'info-circle';
+            },
+
+            formatNumber: (num) => {
+                return new Intl.NumberFormat('vi-VN').format(num);
+            },
+
+            animateValue: (element, start, end, duration = 1000) => {
+                const range = end - start;
+                let startTime;
+                
+                const step = (timestamp) => {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    const value = Math.floor(progress * range + start);
+                    element.textContent = this.formatNumber(value);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    }
+                };
+                
+                requestAnimationFrame(step);
+            }
+        };
+
+        // Navigation Management
+        const Navigation = {
+            init: () => {
+                // Sidebar toggle
+                document.getElementById('sidebarToggle').addEventListener('click', () => {
+                    const sidebar = document.getElementById('sidebar');
+                    const mainContent = document.getElementById('mainContent');
+                    
+                    sidebar.classList.toggle('collapsed');
+                    mainContent.classList.toggle('expanded');
+                });
+
+                // Navigation items
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const section = e.currentTarget.dataset.section;
+                        this.switchSection(section);
+                    });
+                });
+            },
+
+            switchSection: (section) => {
+                // Update active nav item
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelector(`[data-section="${section}"]`).classList.add('active');
+
+                // Hide all sections
+                document.querySelectorAll('.content-section').forEach(sec => {
+                    sec.style.display = 'none';
+                });
+
+                // Show selected section
+                document.getElementById(`${section}-section`).style.display = 'block';
+                
+                AppState.currentSection = section;
+                
+                // Load section-specific content if needed
+                this.loadSectionContent(section);
+            },
+
+            loadSectionContent: async (section) => {
+                if (!AppState.dataLoaded && section !== 'dashboard') {
+                    Utils.showAlert('Vui lòng tải dữ liệu trước khi xem phần này', 'warning');
+                    return;
+                }
+
+                switch(section) {
+                    case 'visualizations':
+                        if (!AppState.analysisResults.visualizations) {
+                            await DataAnalysis.loadVisualizations();
+                        }
+                        break;
+                    case 'ml-analysis':
+                        if (!AppState.analysisResults.mlAnalysis) {
+                            await DataAnalysis.loadMLAnalysis();
+                        }
+                        break;
+                    case 'clustering':
+                        if (!AppState.analysisResults.clustering) {
+                            await DataAnalysis.loadClustering();
+                        }
+                        break;
+                    case 'statistical-tests':
+                        if (!AppState.analysisResults.statisticalTests) {
+                            await DataAnalysis.loadStatisticalTests();
+                        }
+                        break;
+                }
+            }
+        };
+
+        // Data Management
+        const DataManager = {
+            loadData: async () => {
+                Utils.showLoading(true);
+                try {
+                    const response = await fetch('/api/load_data');
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        AppState.dataLoaded = true;
+                        Utils.showAlert(`✅ ${data.message}`, 'success');
+                        
+                        // Update quick stats
+                        this.updateQuickStats(data.basic_stats);
+                        
+                        // Show data overview
+                        this.displayDataOverview(data);
+                        
+                        // Enable analysis button
+                        document.getElementById('startAnalysisBtn').disabled = false;
+                        
+                        return true;
+                    } else {
+                        Utils.showAlert(`❌ ${data.message}`, 'error');
+                        return false;
+                    }
+                } catch (error) {
+                    Utils.showAlert(`❌ Lỗi kết nối: ${error.message}`, 'error');
+                    return false;
+                } finally {
+                    Utils.showLoading(false);
+                }
+            },
+
+            updateQuickStats: (stats) => {
+                document.getElementById('quickStats').style.display = 'flex';
+                
+                // Animate values
+                setTimeout(() => {
+                    Utils.animateValue(document.getElementById('totalRecords'), 0, stats.total_records);
+                }, 200);
+                setTimeout(() => {
+                    Utils.animateValue(document.getElementById('totalColumns'), 0, stats.total_columns);
+                }, 400);
+                setTimeout(() => {
+                    Utils.animateValue(document.getElementById('missingValues'), 0, stats.missing_values);
+                }, 600);
+                setTimeout(() => {
+                    document.getElementById('memoryUsage').textContent = stats.memory_usage;
+                }, 800);
+            },
+
+            displayDataOverview: (data) => {
+                const container = document.getElementById('dataOverviewContent');
+                
+                const overviewHtml = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5 class="chart-title">Cấu trúc dữ liệu</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Cột</th>
+                                                <th>Kiểu dữ liệu</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.columns.map(col => `
+                                                <tr>
+                                                    <td>${col}</td>
+                                                    <td><span class="badge bg-secondary">${this.getColumnType(col)}</span></td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5 class="chart-title">Mẫu dữ liệu</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-striped">
+                                        <thead>
+                                            <tr>
+                                                ${data.columns.slice(0, 5).map(col => `<th>${col}</th>`).join('')}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.sample_data.slice(0, 5).map(row => `
+                                                <tr>
+                                                    ${data.columns.slice(0, 5).map(col => `
+                                                        <td>${this.truncateText(row[col], 20)}</td>
+                                                    `).join('')}
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML = overviewHtml;
+            },
+
+            getColumnType: (column) => {
+                const numericColumns = ['Age', 'Hours_Per_Week', 'Work_Life_Balance_Score', 'Social_Isolation_Score'];
+                return numericColumns.includes(column) ? 'Số' : 'Văn bản';
+            },
+
+            truncateText: (text, maxLength) => {
+                if (!text) return 'N/A';
+                return text.toString().length > maxLength ? 
+                    text.toString().substring(0, maxLength) + '...' : 
+                    text.toString();
+            }
+        };
+
+        // Data Analysis
+        const DataAnalysis = {
+            startFullAnalysis: async () => {
+                if (!AppState.dataLoaded) {
+                    Utils.showAlert('Vui lòng tải dữ liệu trước', 'warning');
+                    return;
+                }
+
+                Utils.showLoading(true);
+                Utils.showAlert('🚀 Bắt đầu phân tích toàn diện...', 'info');
+
+                try {
+                    // Load all analyses in parallel
+                    const promises = [
+                        this.loadVisualizations(),
+                        this.loadMLAnalysis(),
+                        this.loadClustering(),
+                        this.loadStatisticalTests()
+                    ];
+
+                    await Promise.all(promises);
+                    
+                    document.getElementById('exportReportBtn').disabled = false;
+                    Utils.showAlert('✅ Phân tích hoàn tất! Tất cả kết quả đã sẵn sàng.', 'success');
+                    
+                } catch (error) {
+                    Utils.showAlert(`❌ Lỗi phân tích: ${error.message}`, 'error');
+                } finally {
+                    Utils.showLoading(false);
+                }
+            },
+
+            loadVisualizations: async () => {
+                try {
+                    const response = await fetch('/api/advanced_visualizations');
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        AppState.analysisResults.visualizations = data.plots;
+                        this.displayVisualizations(data.plots);
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('Error loading visualizations:', error);
+                    return false;
+                }
+            },
+
+            displayVisualizations: (plots) => {
+                // Dashboard visualization
+                if (plots.dashboard_overview) {
+                    const container = document.getElementById('dashboardVizContainer');
+                    container.innerHTML = '<div class="chart-container"><div id="dashboardPlot" class="chart-title">Dashboard Tổng quan</div></div>';
+                    
+                    const plotData = JSON.parse(plots.dashboard_overview);
+                    Plotly.newPlot('dashboardPlot', plotData.data, plotData.layout, {responsive: true});
+                }
+
+                // 3D Visualization
+                if (plots.scatter_3d) {
+                    const container = document.getElementById('3dVizContainer');
+                    container.innerHTML = '<div class="chart-container"><div id="3dPlot" class="chart-title">Phân tích 3D</div></div>';
+                    
+                    const plotData = JSON.parse(plots.scatter_3d);
+                    Plotly.newPlot('3dPlot', plotData.data, plotData.layout, {responsive: true});
+                }
+
+                // Correlation Heatmap
+                if (plots.correlation_heatmap) {
+                    const container = document.getElementById('correlationVizContainer');
+                    container.innerHTML = '<div class="chart-container"><div id="correlationPlot" class="chart-title">Ma trận tương quan</div></div>';
+                    
+                    const plotData = JSON.parse(plots.correlation_heatmap);
+                    Plotly.newPlot('correlationPlot', plotData.data, plotData.layout, {responsive: true});
+                }
+
+                // Advanced Charts
+                const advancedContainer = document.getElementById('advancedVizContainer');
+                let advancedHtml = '';
+
+                if (plots.sunburst) {
+                    advancedHtml += '<div class="chart-container"><div id="sunburstPlot" style="height: 600px;"></div></div>';
+                }
+
+                if (plots.violin_arrangement) {
+                    advancedHtml += '<div class="chart-container"><div id="violinPlot" style="height: 500px;"></div></div>';
+                }
+
+                advancedContainer.innerHTML = advancedHtml;
+
+                // Render advanced charts
+                setTimeout(() => {
+                    if (plots.sunburst) {
+                        const plotData = JSON.parse(plots.sunburst);
+                        Plotly.newPlot('sunburstPlot', plotData.data, plotData.layout, {responsive: true});
+                    }
+
+                    if (plots.violin_arrangement) {
+                        const plotData = JSON.parse(plots.violin_arrangement);
+                        Plotly.newPlot('violinPlot', plotData.data, plotData.layout, {responsive: true});
+                    }
+                }, 100);
+            },
+
+            loadMLAnalysis: async () => {
+                try {
+                    const response = await fetch('/api/advanced_analysis');
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        AppState.analysisResults.mlAnalysis = data;
+                        this.displayMLAnalysis(data);
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('Error loading ML analysis:', error);
+                    return false;
+                }
+            },
+
+            displayMLAnalysis: (data) => {
+                const container = document.getElementById('mlAnalysisContent');
+                
+                // Model Performance Comparison
+                let modelsHtml = '<div class="row">';
+                Object.entries(data.models_performance).forEach(([modelName, performance]) => {
+                    const isBest = modelName === data.best_model;
+                    modelsHtml += `
+                        <div class="col-md-4">
+                            <div class="model-card ${isBest ? 'best-model' : ''}">
+                                <h5 style="color: white; margin-bottom: 15px;">${modelName}</h5>
+                                <div class="mb-2">
+                                    <small style="color: rgba(255,255,255,0.8);">Độ chính xác</small>
+                                    <div class="progress-glass">
+                                        <div class="progress-bar-glass" style="width: ${(performance.accuracy * 100).toFixed(1)}%"></div>
+                                    </div>
+                                    <span style="color: white; font-weight: bold;">${(performance.accuracy * 100).toFixed(2)}%</span>
+                                </div>
+                                <div class="mb-2">
+                                    <small style="color: rgba(255,255,255,0.8);">Cross-validation</small>
+                                    <div>${(performance.cv_mean * 100).toFixed(2)}% ± ${(performance.cv_std * 100).toFixed(2)}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                modelsHtml += '</div>';
+
+                // Feature Importance Chart
+                const bestModelFeatures = data.feature_importance[data.best_model];
+                const sortedFeatures = Object.entries(bestModelFeatures)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 10);
+
+                const featureNames = sortedFeatures.map(([name, _]) => this.translateFeatureName(name));
+                const featureValues = sortedFeatures.map(([_, value]) => value);
+
+                const featureImportanceHtml = `
+                    <div class="chart-container">
+                        <h4 class="chart-title">Tầm quan trọng các yếu tố (${data.best_model})</h4>
+                        <div id="featureImportanceChart" style="height: 500px;"></div>
+                    </div>
+                `;
+
+                // Recommendations
+                let recommendationsHtml = '';
+                if (data.recommendations && data.recommendations.length > 0) {
+                    recommendationsHtml = `
+                        <div class="chart-container">
+                            <h4 class="chart-title">Khuyến nghị cải thiện</h4>
+                            <div class="row">
+                                ${data.recommendations.map(rec => `
+                                    <div class="col-md-6">
+                                        <div class="recommendation-card">
+                                            <span class="recommendation-priority priority-${rec.priority.toLowerCase().replace('cao', 'high').replace('trung bình', 'medium')}">
+                                                ${rec.priority}
+                                            </span>
+                                            <h6 style="color: white; margin: 10px 0;">${rec.area}</h6>
+                                            <p style="color: rgba(255,255,255,0.9); margin-bottom: 10px;">${rec.recommendation}</p>
+                                            <small style="color: var(--accent-color);">
+                                                <i class="fas fa-chart-line"></i> ${rec.expected_impact}
+                                            </small>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = modelsHtml + featureImportanceHtml + recommendationsHtml;
+
+                // Render feature importance chart
+                setTimeout(() => {
+                    const trace = {
+                        x: featureValues,
+                        y: featureNames,
+                        type: 'bar',
+                        orientation: 'h',
+                        marker: {
+                            color: featureValues.map(val => `rgba(240, 147, 251, ${0.4 + val * 0.6})`),
+                            line: { color: '#f093fb', width: 2 }
+                        }
+                    };
+
+                    const layout = {
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)',
+                        font: { color: 'white' },
+                        xaxis: { title: 'Tầm quan trọng', color: 'white' },
+                        yaxis: { title: '', color: 'white' },
+                        margin: { l: 200, r: 50, t: 50, b: 50 }
+                    };
+
+                    Plotly.newPlot('featureImportanceChart', [trace], layout, {responsive: true});
+                }, 100);
+            },
+
+            loadClustering: async () => {
+                try {
+                    const response = await fetch('/api/clustering_analysis');
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        AppState.analysisResults.clustering = data;
+                        this.displayClustering(data);
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('Error loading clustering:', error);
+                    return false;
+                }
+            },
+
+            displayClustering: (data) => {
+                const container = document.getElementById('clusteringContent');
+                
+                // Cluster Summary
+                let summaryHtml = '<div class="row">';
+                Object.entries(data.clustering_results.cluster_summary).forEach(([clusterName, summary]) => {
+                    const clusterIndex = clusterName.split('_')[1];
+                    summaryHtml += `
+                        <div class="col-md-4">
+                            <div class="stats-card">
+                                <div class="icon"><i class="fas fa-users"></i></div>
+                                <div class="value">${summary.size}</div>
+                                <div class="label">Nhóm ${parseInt(clusterIndex) + 1}</div>
+                                <div style="margin-top: 10px; font-size: 0.9rem; color: rgba(255,255,255,0.8);">
+                                    <div>Tuổi TB: ${summary.avg_age.toFixed(1)}</div>
+                                    <div>Giờ làm TB: ${summary.avg_hours.toFixed(1)}</div>
+                                    <div>WLB Score: ${summary.avg_work_life_balance.toFixed(1)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                summaryHtml += '</div>';
+
+                // Clustering Visualization
+                const vizHtml = `
+                    <div class="chart-container">
+                        <h4 class="chart-title">Phân nhóm nhân viên (PCA Projection)</h4>
+                        <div id="clusteringChart" style="height: 600px;"></div>
+                    </div>
+                `;
+
+                // Silhouette Analysis
+                const silhouetteData = data.clustering_results.silhouette_scores;
+                const silhouetteHtml = `
+                    <div class="chart-container">
+                        <h4 class="chart-title">Phân tích Silhouette Score</h4>
+                        <div id="silhouetteChart" style="height: 400px;"></div>
+                        <div class="mt-3" style="color: rgba(255,255,255,0.9);">
+                            <p><strong>Số nhóm tối ưu:</strong> ${data.clustering_results.optimal_k}</p>
+                            <p><small>Silhouette Score cao hơn cho thấy chất lượng phân nhóm tốt hơn.</small></p>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = summaryHtml + vizHtml + silhouetteHtml;
+
+                // Render clustering visualization
+                setTimeout(() => {
+                    if (data.visualization) {
+                        const plotData = JSON.parse(data.visualization);
+                        Plotly.newPlot('clusteringChart', plotData.data, plotData.layout, {responsive: true});
+                    }
+
+                    // Render silhouette chart
+                    const silhouetteTrace = {
+                        x: silhouetteData.map(([k, _]) => k),
+                        y: silhouetteData.map(([_, score]) => score),
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        marker: { color: '#f093fb', size: 8 },
+                        line: { color: '#f093fb', width: 3 }
+                    };
+
+                    const silhouetteLayout = {
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)',
+                        font: { color: 'white' },
+                        xaxis: { title: 'Số nhóm (K)', color: 'white' },
+                        yaxis: { title: 'Silhouette Score', color: 'white' }
+                    };
+
+                    Plotly.newPlot('silhouetteChart', [silhouetteTrace], silhouetteLayout, {responsive: true});
+                }, 100);
+            },
+
+            loadStatisticalTests: async () => {
+                try {
+                    const response = await fetch('/api/statistical_tests');
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        AppState.analysisResults.statisticalTests = data.tests;
+                        this.displayStatisticalTests(data.tests);
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('Error loading statistical tests:', error);
+                    return false;
+                }
+            },
+
+            displayStatisticalTests: (tests) => {
+                const container = document.getElementById('statisticalTestsContent');
+                
+                let testsHtml = '';
+                Object.entries(tests).forEach(([testKey, testData]) => {
+                    if (testKey === 'error') {
+                        testsHtml += `
+                            <div class="chart-container">
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> ${testData}
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    const isSignificant = testData.p_value < 0.05;
+                    testsHtml += `
+                        <div class="chart-container">
+                            <h5 class="chart-title">${testData.test_name}</h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="stats-card">
+                                        <div class="icon"><i class="fas fa-calculator"></i></div>
+                                        <div class="value">${testData.statistic.toFixed(4)}</div>
+                                        <div class="label">Thống kê kiểm định</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats-card">
+                                        <div class="icon"><i class="fas fa-percent"></i></div>
+                                        <div class="value">${testData.p_value.toFixed(6)}</div>
+                                        <div class="label">P-value</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats-card">
+                                        <div class="icon"><i class="fas fa-${isSignificant ? 'check' : 'times'}"></i></div>
+                                        <div class="value" style="color: ${isSignificant ? 'var(--success-color)' : 'var(--warning-color)'}">
+                                            ${isSignificant ? 'Có ý nghĩa' : 'Không có ý nghĩa'}
+                                        </div>
+                                        <div class="label">Kết luận (α = 0.05)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="alert-glass alert-info">
+                                    <strong>Giải thích:</strong> ${testData.interpretation}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = testsHtml;
+            },
+
+            translateFeatureName: (name) => {
+                const translations = {
+                    'Work_Life_Balance_Score': 'Cân bằng công việc-cuộc sống',
+                    'Social_Isolation_Score': 'Mức độ cô lập xã hội',
+                    'Hours_Per_Week': 'Số giờ làm việc/tuần',
+                    'Age': 'Tuổi',
+                    'Industry_encoded': 'Ngành nghề',
+                    'Work_Arrangement_encoded': 'Hình thức làm việc',
+                    'Job_Role_encoded': 'Vai trò công việc',
+                    'Physical_Health_Issues_encoded': 'Vấn đề sức khỏe thể chất',
+                    'Salary_Range_encoded': 'Mức lương',
+                    'Gender_encoded': 'Giới tính',
+                    'Region_encoded': 'Khu vực'
+                };
+                return translations[name] || name;
+            }
+        };
+
+        // Report Export
+        const ReportExporter = {
+            exportReport: () => {
+                const reportData = this.generateReportData();
+                const reportHtml = this.generateReportHTML(reportData);
+                this.downloadReport(reportHtml);
+            },
+
+            generateReportData: () => {
+                return {
+                    timestamp: new Date().toLocaleString('vi-VN'),
+                    dataLoaded: AppState.dataLoaded,
+                    analysisResults: AppState.analysisResults
+                };
+            },
+
+            generateReportHTML: (data) => {
+                return `
+                    <!DOCTYPE html>
+                    <html lang="vi">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Báo cáo Phân tích Sức khỏe Tinh thần</title>
+                        <style>
+                            body { font-family: 'Segoe UI', sans-serif; margin: 40px; }
+                            .header { text-align: center; margin-bottom: 40px; }
+                            .section { margin: 30px 0; }
+                            .chart-placeholder { 
+                                background: #f0f0f0; 
+                                height: 300px; 
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center; 
+                                margin: 20px 0; 
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>Báo cáo Phân tích Sức khỏe Tinh thần Người lao động</h1>
+                            <p>Được tạo vào: ${data.timestamp}</p>
+                        </div>
+                        
+                        <div class="section">
+                            <h2>Tóm tắt Executive</h2>
+                            <p>Báo cáo này cung cấp phân tích toàn diện về các yếu tố ảnh hưởng đến sức khỏe tinh thần của người lao động...</p>
+                        </div>
+                        
+                        <div class="section">
+                            <h2>Phân tích Machine Learning</h2>
+                            <div class="chart-placeholder">Biểu đồ Feature Importance</div>
+                        </div>
+                        
+                        <div class="section">
+                            <h2>Khuyến nghị</h2>
+                            <!-- Recommendations content -->
+                        </div>
+                    </body>
+                    </html>
+                `;
+            },
+
+            downloadReport: (htmlContent) => {
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mental_health_analysis_report_${new Date().getTime()}.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                Utils.showAlert('✅ Báo cáo đã được tải xuống thành công!', 'success');
+            }
+        };
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            Navigation.init();
+            
+            // Load data button
+            document.getElementById('loadDataBtn').addEventListener('click', DataManager.loadData);
+            
+            // Start analysis button
+            document.getElementById('startAnalysisBtn').addEventListener('click', DataAnalysis.startFullAnalysis);
+            
+            // Export report button
+            document.getElementById('exportReportBtn').addEventListener('click', ReportExporter.exportReport);
+            
+            // Feature cards click events
+            document.querySelectorAll('.feature-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const feature = e.currentTarget.dataset.feature;
+                    switch(feature) {
+                        case 'advanced-viz':
+                            Navigation.switchSection('visualizations');
+                            break;
+                        case 'ml-models':
+                            Navigation.switchSection('ml-analysis');
+                            break;
+                        case 'clustering':
+                            Navigation.switchSection('clustering');
+                            break;
+                    }
+                });
+            });
+
+            // Initial welcome message
+            Utils.showAlert('🎉 Chào mừng đến với Mental Health Analytics Platform! Hãy bắt đầu bằng việc tải dữ liệu.', 'info', 10000);
+        });
+    </script>
+</body>
+</html>
