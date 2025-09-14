@@ -696,11 +696,7 @@ def initialize_data():
 
 
 if __name__ == '__main__':
-    # Try to load data immediately when starting
-    success, message = load_data()
-    if success:
-        print(f"✅ Data loaded on startup: {message}")
-    else:
-        print(f"⚠️ Warning: {message}")
+    # Initialize data when starting the app
+    initialize_data()
 
     app.run(debug=True, host='0.0.0.0', port=5000)
