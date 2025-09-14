@@ -10,14 +10,10 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, silhouette_score
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
-import seaborn as sns
-import matplotlib.pyplot as plt
-import io
-import base64
-from scipy.stats import chi2_contingency, pearsonr
+from scipy.stats import chi2_contingency, ttest_ind, f_oneway
 from datetime import datetime
 import warnings
 import os
@@ -32,23 +28,6 @@ models_cache = {}
 analysis_cache = {}
 
 
-def convert_to_serializable(obj):
-    """Convert pandas/numpy objects to JSON serializable types"""
-    if pd.isna(obj):
-        return None
-    elif isinstance(obj, (np.integer, pd.Int64Dtype)):
-        return int(obj)
-    elif isinstance(obj, (np.floating, pd.Float64Dtype)):
-        return float(obj)
-    elif isinstance(obj, np.ndarray):
-        return obj.tolist()
-    elif isinstance(obj, pd.Series):
-        return obj.astype(object).fillna('N/A').to_dict()
-    elif isinstance(obj, pd.DataFrame):
-        return obj.astype(object).fillna('N/A').to_dict('records')
-    return obj
-
-
 class DataAnalyzer:
     def __init__(self, dataframe):
         self.df = dataframe
@@ -57,7 +36,7 @@ class DataAnalyzer:
         self.scaler = StandardScaler()
 
     def preprocess_data(self):
-        """Tiền xử lý dữ liệu nâng cao"""
+        """Advanced data preprocessing"""
         self.processed_df = self.df.copy()
 
         # Handle missing values
@@ -76,7 +55,7 @@ class DataAnalyzer:
 
         # Encode categorical variables
         for col in categorical_cols:
-            if col != 'Mental_Health_Status':  # Don't encode target variable yet
+            if col != 'Mental_Health_Status':
                 le = LabelEncoder()
                 self.processed_df[f'{col}_encoded'] = le.fit_transform(self.processed_df[col].astype(str))
                 self.encoders[col] = le
@@ -84,7 +63,7 @@ class DataAnalyzer:
         return self.processed_df
 
     def advanced_feature_analysis(self):
-        """Phân tích feature nâng cao với nhiều thuật toán"""
+        """Advanced feature analysis with multiple algorithms"""
         if self.processed_df is None:
             self.preprocess_data()
 
@@ -154,7 +133,7 @@ class DataAnalyzer:
         }
 
     def clustering_analysis(self):
-        """Phân tích clustering để tìm nhóm nhân viên"""
+        """Clustering analysis to find employee groups"""
         if self.processed_df is None:
             self.preprocess_data()
 
@@ -171,22 +150,21 @@ class DataAnalyzer:
         # Determine optimal number of clusters
         inertias = []
         silhouette_scores = []
-        K_range = range(2, min(8, len(X_cluster) // 10))  # Ensure reasonable k range
+        K_range = range(2, min(8, len(X_cluster) // 10))
 
         for k in K_range:
             kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
             kmeans.fit(X_cluster_scaled)
             inertias.append(float(kmeans.inertia_))
 
-            from sklearn.metrics import silhouette_score
             score = silhouette_score(X_cluster_scaled, kmeans.labels_)
             silhouette_scores.append(float(score))
 
-        # Choose optimal k (highest silhouette score)
+        # Choose optimal k
         if silhouette_scores:
             optimal_k = list(K_range)[np.argmax(silhouette_scores)]
         else:
-            optimal_k = 3  # Default
+            optimal_k = 3
 
         # Final clustering
         kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
@@ -221,61 +199,29 @@ class DataAnalyzer:
             'cluster_data': cluster_df
         }
 
-    def correlation_network_analysis(self):
-        """Phân tích mạng tương quan nâng cao"""
-        numeric_cols = self.df.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) < 2:
-            return None
-
-        corr_matrix = self.df[numeric_cols].corr()
-
-        # Find strong correlations (>0.5 or <-0.5)
-        strong_correlations = []
-        for i in range(len(corr_matrix.columns)):
-            for j in range(i + 1, len(corr_matrix.columns)):
-                corr_val = corr_matrix.iloc[i, j]
-                if abs(corr_val) > 0.5:
-                    strong_correlations.append({
-                        'var1': corr_matrix.columns[i],
-                        'var2': corr_matrix.columns[j],
-                        'correlation': float(corr_val),
-                        'strength': 'Strong' if abs(corr_val) > 0.7 else 'Moderate'
-                    })
-
-        return {
-            'correlation_matrix': corr_matrix,
-            'strong_correlations': strong_correlations
-        }
-
 
 def load_data():
     """Load and validate data"""
     global df
     try:
-        # Check if data.csv exists in the current directory
         if not os.path.exists('data.csv'):
             return False, "Không tìm thấy file data.csv trong thư mục hiện tại"
 
         df = pd.read_csv('data.csv')
-        print(f"Data loaded successfully: {len(df)} rows, {len(df.columns)} columns")
-        print(f"Columns: {df.columns.tolist()}")
-        print(f"Data types:\n{df.dtypes}")
+        print(f"Data loaded: {len(df)} rows, {len(df.columns)} columns")
 
-        # Basic data validation
         if df.empty:
             return False, "File CSV trống"
         if len(df.columns) < 5:
             return False, "File CSV không đủ cột dữ liệu"
         return True, f"Đã tải thành công {len(df)} dòng dữ liệu với {len(df.columns)} cột"
-    except FileNotFoundError:
-        return False, "Không tìm thấy file data.csv"
     except Exception as e:
         print(f"Error loading data: {str(e)}")
         return False, f"Lỗi khi đọc file: {str(e)}"
 
 
 def create_advanced_visualizations():
-    """Tạo các biểu đồ nâng cao và tương tác"""
+    """Create advanced and interactive visualizations"""
     if df is None:
         return {}
 
@@ -303,7 +249,7 @@ def create_advanced_visualizations():
             for burnout in df['Burnout_Level'].unique():
                 data = burnout_counts[burnout_counts['Burnout_Level'] == burnout]
                 fig_overview.add_trace(
-                    go.Bar(x=data['Industry'], y=data['count'], name=f'Burnout: {burnout}'),
+                    go.Bar(x=data['Industry'], y=data['count'], name=f'{burnout}'),
                     row=1, col=2
                 )
 
@@ -337,12 +283,10 @@ def create_advanced_visualizations():
                                            'Work_Life_Balance_Score': 'Điểm WLB'})
             plots['scatter_3d'] = json.dumps(fig_3d, cls=plotly.utils.PlotlyJSONEncoder)
 
-        # 3. Heatmap chi tiết
+        # 3. Correlation Heatmap
         numeric_cols = df.select_dtypes(include=[np.number]).columns
         if len(numeric_cols) > 3:
-            numeric_df = df[numeric_cols]
-            correlation_matrix = numeric_df.corr()
-
+            correlation_matrix = df[numeric_cols].corr()
             fig_heatmap = px.imshow(correlation_matrix,
                                     labels=dict(color="Tương quan"),
                                     title="Ma trận tương quan chi tiết",
@@ -357,7 +301,7 @@ def create_advanced_visualizations():
                                        title='Phân bố đa cấp: Vùng miền - Ngành nghề - Sức khỏe tinh thần')
             plots['sunburst'] = json.dumps(fig_sunburst, cls=plotly.utils.PlotlyJSONEncoder)
 
-        # 5. Violin plots comparison
+        # 5. Violin plots
         if all(col in df.columns for col in ['Work_Arrangement', 'Social_Isolation_Score']):
             fig_violin = px.violin(df,
                                    x='Work_Arrangement',
@@ -372,17 +316,137 @@ def create_advanced_visualizations():
     return plots
 
 
+def create_clustering_visualization(cluster_result):
+    """Create clustering visualization"""
+    try:
+        cluster_data = cluster_result['cluster_data']
+
+        # 2D projection using PCA
+        feature_cols = ['Age', 'Hours_Per_Week', 'Work_Life_Balance_Score', 'Social_Isolation_Score']
+        feature_cols = [col for col in feature_cols if col in cluster_data.columns]
+
+        if len(feature_cols) >= 2:
+            pca = PCA(n_components=2)
+            X_pca = pca.fit_transform(cluster_data[feature_cols].fillna(0))
+
+            fig = px.scatter(x=X_pca[:, 0], y=X_pca[:, 1],
+                             color=cluster_data['Cluster'].astype(str),
+                             title='Phân nhóm nhân viên (PCA Projection)',
+                             labels={'x': f'PC1 ({pca.explained_variance_ratio_[0]:.2%})',
+                                     'y': f'PC2 ({pca.explained_variance_ratio_[1]:.2%})'})
+
+            return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    except Exception as e:
+        print(f"Error creating clustering visualization: {str(e)}")
+    return None
+
+
+def perform_statistical_tests():
+    """Perform statistical tests"""
+    results = {}
+
+    try:
+        # Chi-square test for categorical variables
+        if all(col in df.columns for col in ['Gender', 'Mental_Health_Status']):
+            contingency_table = pd.crosstab(df['Gender'], df['Mental_Health_Status'])
+            chi2, p_value, dof, expected = chi2_contingency(contingency_table)
+
+            results['chi_square_gender_mental'] = {
+                'test_name': 'Chi-square: Giới tính vs Sức khỏe tinh thần',
+                'statistic': float(chi2),
+                'p_value': float(p_value),
+                'degrees_of_freedom': int(dof),
+                'interpretation': 'Có mối liên hệ có ý nghĩa' if p_value < 0.05 else 'Không có mối liên hệ có ý nghĩa'
+            }
+
+        # T-test for work hours vs mental health
+        if all(col in df.columns for col in ['Hours_Per_Week', 'Mental_Health_Status']):
+            mental_categories = df['Mental_Health_Status'].unique()
+            if len(mental_categories) >= 2:
+                group1 = df[df['Mental_Health_Status'] == mental_categories[0]]['Hours_Per_Week'].dropna()
+                group2 = df[df['Mental_Health_Status'] == mental_categories[1]]['Hours_Per_Week'].dropna()
+                t_stat, p_value = ttest_ind(group1, group2)
+
+                results['t_test_hours_mental'] = {
+                    'test_name': f'T-test: Giờ làm việc giữa {mental_categories[0]} và {mental_categories[1]}',
+                    'statistic': float(t_stat),
+                    'p_value': float(p_value),
+                    'interpretation': 'Có sự khác biệt có ý nghĩa' if p_value < 0.05 else 'Không có sự khác biệt có ý nghĩa'
+                }
+
+        # ANOVA for work-life balance across mental health categories
+        if all(col in df.columns for col in ['Work_Life_Balance_Score', 'Mental_Health_Status']):
+            groups = [group['Work_Life_Balance_Score'].dropna() for name, group in df.groupby('Mental_Health_Status')]
+            if len(groups) >= 2:
+                f_stat, p_value = f_oneway(*groups)
+
+                results['anova_wlb_mental'] = {
+                    'test_name': 'ANOVA: Work-Life Balance giữa các nhóm sức khỏe tinh thần',
+                    'statistic': float(f_stat),
+                    'p_value': float(p_value),
+                    'interpretation': 'Có sự khác biệt có ý nghĩa giữa các nhóm' if p_value < 0.05 else 'Không có sự khác biệt có ý nghĩa'
+                }
+
+    except Exception as e:
+        results['error'] = f'Lỗi thực hiện kiểm định: {str(e)}'
+
+    return results
+
+
+def generate_recommendations(analysis_result):
+    """Generate recommendations based on analysis results"""
+    recommendations = []
+
+    if 'feature_importance' in analysis_result:
+        best_model = analysis_result['best_model']
+        feature_importance = analysis_result['feature_importance'][best_model]
+
+        # Sort features by importance
+        sorted_features = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
+
+        # Generate specific recommendations
+        top_feature = sorted_features[0][0] if sorted_features else ''
+
+        if 'Work_Life_Balance' in top_feature:
+            recommendations.append({
+                'priority': 'Cao',
+                'area': 'Cân bằng công việc-cuộc sống',
+                'recommendation': 'Thiết lập chính sách linh hoạt về thời gian làm việc và khuyến khích nhân viên sử dụng thời gian nghỉ phép.',
+                'expected_impact': 'Cải thiện 25-30% tình trạng sức khỏe tinh thần'
+            })
+
+        if 'Social_Isolation' in str(sorted_features[:3]):
+            recommendations.append({
+                'priority': 'Cao',
+                'area': 'Tương tác xã hội',
+                'recommendation': 'Tổ chức các hoạt động team building định kỳ và tạo không gian làm việc chung thân thiện.',
+                'expected_impact': 'Giảm 20-25% mức độ cô lập xã hội'
+            })
+
+        if 'Hours_Per_Week' in str(sorted_features[:3]):
+            recommendations.append({
+                'priority': 'Trung bình',
+                'area': 'Quản lý thời gian',
+                'recommendation': 'Giám sát và kiểm soát số giờ làm việc, tránh tình trạng làm việc quá tải thường xuyên.',
+                'expected_impact': 'Cải thiện 15-20% tình trạng burnout'
+            })
+
+    return recommendations
+
+
+# Routes
 @app.route('/')
 def index():
     return render_template('index.html')
 
 
-@app.route('/api/load_data')
-def api_load_data():
+@app.route('/api/initial_load')
+def api_initial_load():
+    """API endpoint for automatic initial data loading"""
     try:
         success, message = load_data()
         if success:
-            # Convert data types to ensure JSON serialization
+            # Get all initial data
             basic_stats = {
                 'total_records': int(len(df)),
                 'total_columns': int(len(df.columns)),
@@ -393,29 +457,42 @@ def api_load_data():
 
             # Convert sample data
             sample_data = df.head().copy()
-            # Convert all columns to object to avoid serialization issues
             for col in sample_data.columns:
                 sample_data[col] = sample_data[col].astype(str)
-
-            # Fill NaN values
             sample_data = sample_data.fillna('N/A')
+
+            # Create initial visualizations
+            plots = create_advanced_visualizations()
 
             response_data = {
                 'status': 'success',
                 'message': message,
                 'basic_stats': basic_stats,
                 'columns': list(df.columns),
-                'sample_data': sample_data.to_dict('records')
+                'sample_data': sample_data.to_dict('records'),
+                'initial_plots': plots
             }
 
-            print("API response prepared successfully")
             return jsonify(response_data)
         else:
             return jsonify({'status': 'error', 'message': message})
 
     except Exception as e:
-        print(f"Error in api_load_data: {str(e)}")
+        print(f"Error in api_initial_load: {str(e)}")
         return jsonify({'status': 'error', 'message': f'Lỗi server: {str(e)}'})
+
+
+@app.route('/api/advanced_visualizations')
+def api_advanced_visualizations():
+    if df is None:
+        return jsonify({'status': 'error', 'message': 'Chưa tải dữ liệu'})
+
+    try:
+        plots = create_advanced_visualizations()
+        return jsonify({'status': 'success', 'plots': plots})
+    except Exception as e:
+        print(f"Error in advanced_visualizations: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'Lỗi tạo biểu đồ: {str(e)}'})
 
 
 @app.route('/api/advanced_analysis')
@@ -491,19 +568,6 @@ def api_clustering_analysis():
         return jsonify({'status': 'error', 'message': f'Lỗi phân tích clustering: {str(e)}'})
 
 
-@app.route('/api/advanced_visualizations')
-def api_advanced_visualizations():
-    if df is None:
-        return jsonify({'status': 'error', 'message': 'Chưa tải dữ liệu'})
-
-    try:
-        plots = create_advanced_visualizations()
-        return jsonify({'status': 'success', 'plots': plots})
-    except Exception as e:
-        print(f"Error in advanced_visualizations: {str(e)}")
-        return jsonify({'status': 'error', 'message': f'Lỗi tạo biểu đồ: {str(e)}'})
-
-
 @app.route('/api/statistical_tests')
 def api_statistical_tests():
     if df is None:
@@ -517,171 +581,10 @@ def api_statistical_tests():
         return jsonify({'status': 'error', 'message': f'Lỗi thử nghiệm thống kê: {str(e)}'})
 
 
-@app.route('/api/initial_load')
-def api_initial_load():
-    """API endpoint for automatic initial data loading"""
-    try:
-        success, message = load_data()
-        if success:
-            # Get all initial data
-            basic_stats = {
-                'total_records': int(len(df)),
-                'total_columns': int(len(df.columns)),
-                'missing_values': int(df.isnull().sum().sum()),
-                'data_types': {str(k): int(v) for k, v in df.dtypes.value_counts().to_dict().items()},
-                'memory_usage': f"{df.memory_usage(deep=True).sum() / 1024 ** 2:.2f} MB"
-            }
-
-            # Convert sample data
-            sample_data = df.head().copy()
-            for col in sample_data.columns:
-                sample_data[col] = sample_data[col].astype(str)
-            sample_data = sample_data.fillna('N/A')
-
-            # Create initial visualizations
-            plots = create_advanced_visualizations()
-
-            response_data = {
-                'status': 'success',
-                'message': message,
-                'basic_stats': basic_stats,
-                'columns': list(df.columns),
-                'sample_data': sample_data.to_dict('records'),
-                'initial_plots': plots
-            }
-
-            return jsonify(response_data)
-        else:
-            return jsonify({'status': 'error', 'message': message})
-
-    except Exception as e:
-        print(f"Error in api_initial_load: {str(e)}")
-        return jsonify({'status': 'error', 'message': f'Lỗi server: {str(e)}'})
-
-
-def create_clustering_visualization(cluster_result):
-    """Tạo biểu đồ clustering"""
-    try:
-        cluster_data = cluster_result['cluster_data']
-
-        # 2D projection using PCA
-        from sklearn.decomposition import PCA
-
-        feature_cols = ['Age', 'Hours_Per_Week', 'Work_Life_Balance_Score', 'Social_Isolation_Score']
-        feature_cols = [col for col in feature_cols if col in cluster_data.columns]
-
-        if len(feature_cols) >= 2:
-            pca = PCA(n_components=2)
-            X_pca = pca.fit_transform(cluster_data[feature_cols].fillna(0))
-
-            fig = px.scatter(x=X_pca[:, 0], y=X_pca[:, 1],
-                             color=cluster_data['Cluster'].astype(str),
-                             title='Phân nhóm nhân viên (PCA Projection)',
-                             labels={'x': f'PC1 ({pca.explained_variance_ratio_[0]:.2%})',
-                                     'y': f'PC2 ({pca.explained_variance_ratio_[1]:.2%})'})
-
-            return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    except Exception as e:
-        print(f"Error creating clustering visualization: {str(e)}")
-
-    return None
-
-
-def perform_statistical_tests():
-    """Thực hiện các kiểm định thống kê"""
-    results = {}
-
-    try:
-        # Chi-square test for categorical variables
-        if all(col in df.columns for col in ['Gender', 'Mental_Health_Status']):
-            contingency_table = pd.crosstab(df['Gender'], df['Mental_Health_Status'])
-            chi2, p_value, dof, expected = chi2_contingency(contingency_table)
-
-            results['chi_square_gender_mental'] = {
-                'test_name': 'Chi-square: Giới tính vs Sức khỏe tinh thần',
-                'statistic': float(chi2),
-                'p_value': float(p_value),
-                'degrees_of_freedom': int(dof),
-                'interpretation': 'Có mối liên hệ có ý nghĩa' if p_value < 0.05 else 'Không có mối liên hệ có ý nghĩa'
-            }
-
-        # T-test for work hours vs mental health
-        if all(col in df.columns for col in ['Hours_Per_Week', 'Mental_Health_Status']):
-            from scipy.stats import ttest_ind
-
-            mental_categories = df['Mental_Health_Status'].unique()
-            if len(mental_categories) >= 2:
-                group1 = df[df['Mental_Health_Status'] == mental_categories[0]]['Hours_Per_Week'].dropna()
-                group2 = df[df['Mental_Health_Status'] == mental_categories[1]]['Hours_Per_Week'].dropna()
-
-                t_stat, p_value = ttest_ind(group1, group2)
-
-                results['t_test_hours_mental'] = {
-                    'test_name': f'T-test: Giờ làm việc giữa {mental_categories[0]} và {mental_categories[1]}',
-                    'statistic': float(t_stat),
-                    'p_value': float(p_value),
-                    'interpretation': 'Có sự khác biệt có ý nghĩa' if p_value < 0.05 else 'Không có sự khác biệt có ý nghĩa'
-                }
-
-        # ANOVA for work-life balance across mental health categories
-        if all(col in df.columns for col in ['Work_Life_Balance_Score', 'Mental_Health_Status']):
-            from scipy.stats import f_oneway
-
-            groups = [group['Work_Life_Balance_Score'].dropna() for name, group in df.groupby('Mental_Health_Status')]
-            if len(groups) >= 2:
-                f_stat, p_value = f_oneway(*groups)
-
-                results['anova_wlb_mental'] = {
-                    'test_name': 'ANOVA: Work-Life Balance giữa các nhóm sức khỏe tinh thần',
-                    'statistic': float(f_stat),
-                    'p_value': float(p_value),
-                    'interpretation': 'Có sự khác biệt có ý nghĩa giữa các nhóm' if p_value < 0.05 else 'Không có sự khác biệt có ý nghĩa'
-                }
-
-    except Exception as e:
-        results['error'] = f'Lỗi thực hiện kiểm định: {str(e)}'
-
-    return results
-
-
-def generate_recommendations(analysis_result):
-    """Tạo khuyến nghị dựa trên kết quả phân tích"""
-    recommendations = []
-
-    if 'feature_importance' in analysis_result:
-        best_model = analysis_result['best_model']
-        feature_importance = analysis_result['feature_importance'][best_model]
-
-        # Sort features by importance
-        sorted_features = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
-
-        # Generate specific recommendations
-        top_feature = sorted_features[0][0] if sorted_features else ''
-        if 'Work_Life_Balance' in top_feature:
-            recommendations.append({
-                'priority': 'Cao',
-                'area': 'Cân bằng công việc-cuộc sống',
-                'recommendation': 'Thiết lập chính sách linh hoạt về thời gian làm việc và khuyến khích nhân viên sử dụng thời gian nghỉ phép.',
-                'expected_impact': 'Cải thiện 25-30% tình trạng sức khỏe tinh thần'
-            })
-
-        if 'Social_Isolation' in str(sorted_features[:3]):
-            recommendations.append({
-                'priority': 'Cao',
-                'area': 'Tương tác xã hội',
-                'recommendation': 'Tổ chức các hoạt động team building định kỳ và tạo không gian làm việc chung thân thiện.',
-                'expected_impact': 'Giảm 20-25% mức độ cô lập xã hội'
-            })
-
-        if 'Hours_Per_Week' in str(sorted_features[:3]):
-            recommendations.append({
-                'priority': 'Trung bình',
-                'area': 'Quản lý thời gian',
-                'recommendation': 'Giám sát và kiểm soát số giờ làm việc, tránh tình trạng làm việc quá tải thường xuyên.',
-                'expected_impact': 'Cải thiện 15-20% tình trạng burnout'
-            })
-
-    return recommendations
+# Static file serving
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
 
 
 # Auto-load data on server start
@@ -697,5 +600,4 @@ def initialize_data():
 if __name__ == '__main__':
     # Initialize data when starting the app
     initialize_data()
-
     app.run(debug=True, host='0.0.0.0', port=5000)
