@@ -685,7 +685,6 @@ def generate_recommendations(analysis_result):
 
 
 # Auto-load data on server start
-@app.before_first_request
 def initialize_data():
     """Automatically load data when server starts"""
     success, message = load_data()
