@@ -20,6 +20,7 @@ import base64
 from scipy.stats import chi2_contingency, pearsonr
 from datetime import datetime
 import warnings
+import os
 
 warnings.filterwarnings('ignore')
 
@@ -68,7 +69,10 @@ class DataAnalyzer:
             self.processed_df[col].fillna(self.processed_df[col].median(), inplace=True)
 
         for col in categorical_cols:
-            self.processed_df[col].fillna(self.processed_df[col].mode()[0], inplace=True)
+            if len(self.processed_df[col].mode()) > 0:
+                self.processed_df[col].fillna(self.processed_df[col].mode()[0], inplace=True)
+            else:
+                self.processed_df[col].fillna('Unknown', inplace=True)
 
         # Encode categorical variables
         for col in categorical_cols:
@@ -167,7 +171,7 @@ class DataAnalyzer:
         # Determine optimal number of clusters
         inertias = []
         silhouette_scores = []
-        K_range = range(2, 8)
+        K_range = range(2, min(8, len(X_cluster) // 10))  # Ensure reasonable k range
 
         for k in K_range:
             kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
@@ -179,7 +183,10 @@ class DataAnalyzer:
             silhouette_scores.append(float(score))
 
         # Choose optimal k (highest silhouette score)
-        optimal_k = K_range[np.argmax(silhouette_scores)]
+        if silhouette_scores:
+            optimal_k = list(K_range)[np.argmax(silhouette_scores)]
+        else:
+            optimal_k = 3  # Default
 
         # Final clustering
         kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
@@ -217,6 +224,9 @@ class DataAnalyzer:
     def correlation_network_analysis(self):
         """Phân tích mạng tương quan nâng cao"""
         numeric_cols = self.df.select_dtypes(include=[np.number]).columns
+        if len(numeric_cols) < 2:
+            return None
+
         corr_matrix = self.df[numeric_cols].corr()
 
         # Find strong correlations (>0.5 or <-0.5)
@@ -242,6 +252,10 @@ def load_data():
     """Load and validate data"""
     global df
     try:
+        # Check if data.csv exists in the current directory
+        if not os.path.exists('data.csv'):
+            return False, "Không tìm thấy file data.csv trong thư mục hiện tại"
+
         df = pd.read_csv('data.csv')
         print(f"Data loaded successfully: {len(df)} rows, {len(df.columns)} columns")
         print(f"Columns: {df.columns.tolist()}")
@@ -324,8 +338,9 @@ def create_advanced_visualizations():
             plots['scatter_3d'] = json.dumps(fig_3d, cls=plotly.utils.PlotlyJSONEncoder)
 
         # 3. Heatmap chi tiết
-        if len(df.select_dtypes(include=[np.number]).columns) > 3:
-            numeric_df = df.select_dtypes(include=[np.number])
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        if len(numeric_cols) > 3:
+            numeric_df = df[numeric_cols]
             correlation_matrix = numeric_df.corr()
 
             fig_heatmap = px.imshow(correlation_matrix,
@@ -502,6 +517,48 @@ def api_statistical_tests():
         return jsonify({'status': 'error', 'message': f'Lỗi thử nghiệm thống kê: {str(e)}'})
 
 
+@app.route('/api/initial_load')
+def api_initial_load():
+    """API endpoint for automatic initial data loading"""
+    try:
+        success, message = load_data()
+        if success:
+            # Get all initial data
+            basic_stats = {
+                'total_records': int(len(df)),
+                'total_columns': int(len(df.columns)),
+                'missing_values': int(df.isnull().sum().sum()),
+                'data_types': {str(k): int(v) for k, v in df.dtypes.value_counts().to_dict().items()},
+                'memory_usage': f"{df.memory_usage(deep=True).sum() / 1024 ** 2:.2f} MB"
+            }
+
+            # Convert sample data
+            sample_data = df.head().copy()
+            for col in sample_data.columns:
+                sample_data[col] = sample_data[col].astype(str)
+            sample_data = sample_data.fillna('N/A')
+
+            # Create initial visualizations
+            plots = create_advanced_visualizations()
+
+            response_data = {
+                'status': 'success',
+                'message': message,
+                'basic_stats': basic_stats,
+                'columns': list(df.columns),
+                'sample_data': sample_data.to_dict('records'),
+                'initial_plots': plots
+            }
+
+            return jsonify(response_data)
+        else:
+            return jsonify({'status': 'error', 'message': message})
+
+    except Exception as e:
+        print(f"Error in api_initial_load: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'Lỗi server: {str(e)}'})
+
+
 def create_clustering_visualization(cluster_result):
     """Tạo biểu đồ clustering"""
     try:
@@ -599,7 +656,7 @@ def generate_recommendations(analysis_result):
         sorted_features = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
 
         # Generate specific recommendations
-        top_feature = sorted_features[0][0]
+        top_feature = sorted_features[0][0] if sorted_features else ''
         if 'Work_Life_Balance' in top_feature:
             recommendations.append({
                 'priority': 'Cao',
@@ -627,5 +684,23 @@ def generate_recommendations(analysis_result):
     return recommendations
 
 
+# Auto-load data on server start
+@app.before_first_request
+def initialize_data():
+    """Automatically load data when server starts"""
+    success, message = load_data()
+    if success:
+        print(f"✅ Auto-loaded data on server start: {message}")
+    else:
+        print(f"⚠️ Could not auto-load data: {message}")
+
+
 if __name__ == '__main__':
+    # Try to load data immediately when starting
+    success, message = load_data()
+    if success:
+        print(f"✅ Data loaded on startup: {message}")
+    else:
+        print(f"⚠️ Warning: {message}")
+
     app.run(debug=True, host='0.0.0.0', port=5000)
