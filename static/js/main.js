@@ -466,237 +466,113 @@ const Visualizations = {
     }
 };
 
-const InsightsModule = {
-    // Replace ML Analysis with Insights Dashboard
-    displayInsightsDashboard: async () => {
-        try {
-            const response = await fetch('/api/enhanced_analytics');
-            const data = await response.json();
+// ML Analysis Module
+const MLAnalysis = {
+    display: () => {
+        const data = AppState.analysisResults.mlAnalysis;
+        if (!data) return;
 
-            if (data.status === 'success') {
-                InsightsModule.renderRiskDashboard(data.risk_analysis);
-                InsightsModule.renderKeyInsights(data);
-                InsightsModule.renderActionableRecommendations(data);
-                InsightsModule.renderVisualizations(data.visualizations);
-            }
-        } catch (error) {
-            console.error('Error loading insights:', error);
+        // Display model performance
+        const perfContainer = document.getElementById('ml-models-performance');
+        if (perfContainer) {
+            perfContainer.innerHTML = MLAnalysis.renderModelsPerformance(data.models_performance, data.best_model);
+        }
+
+        // Display feature importance
+        const featureContainer = document.getElementById('ml-feature-importance');
+        if (featureContainer) {
+            featureContainer.innerHTML = MLAnalysis.renderFeatureImportance(data.feature_importance);
+        }
+
+        // Display recommendations
+        const recContainer = document.getElementById('ml-recommendations');
+        if (recContainer && data.recommendations) {
+            recContainer.innerHTML = MLAnalysis.renderRecommendations(data.recommendations);
         }
     },
 
-    renderRiskDashboard: (riskData) => {
-        const container = document.getElementById('ml-analysis-section');
+    renderModelsPerformance: (models, bestModel) => {
+        return `
+            <h4 style="color: white;">Hiệu suất các mô hình ML</h4>
+            <div class="row">
+                ${Object.entries(models).map(([name, metrics]) => `
+                    <div class="col-md-4">
+                        <div class="model-card ${name === bestModel ? 'best-model' : ''}">
+                            <h5 style="color: white;">${name}</h5>
+                            <div style="color: rgba(255,255,255,0.9);">
+                                <p>Độ chính xác: <strong>${(metrics.accuracy * 100).toFixed(2)}%</strong></p>
+                                <p>CV Mean: ${(metrics.cv_mean * 100).toFixed(2)}%</p>
+                                <p>CV Std: ±${(metrics.cv_std * 100).toFixed(2)}%</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    },
+
+    renderFeatureImportance: (importance) => {
+        const firstModel = Object.keys(importance)[0];
+        const features = importance[firstModel];
+
+        const sortedFeatures = Object.entries(features)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
 
         const html = `
-            <div class="insights-dashboard">
-                <h3 class="chart-title">📊 Risk Assessment & Key Insights</h3>
-                
-                <!-- Overall Risk Score -->
-                <div class="risk-score-container">
-                    <div class="composite-risk-card ${InsightsModule.getRiskClass(riskData.composite_risk)}">
-                        <h4>Mức độ rủi ro tổng thể</h4>
-                        <div class="risk-meter">
-                            <div class="risk-value">${riskData.composite_risk.toFixed(1)}%</div>
-                            <div class="risk-level">${riskData.risk_level}</div>
-                        </div>
-                        <div class="risk-bar">
-                            <div class="risk-fill" style="width: ${riskData.composite_risk}%"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Individual Risk Factors -->
-                <div class="row mt-4">
-                    ${Object.entries(riskData.risk_factors).map(([factor, value]) => `
-                        <div class="col-md-3">
-                            <div class="risk-factor-card">
-                                <div class="risk-icon">
-                                    <i class="fas fa-${InsightsModule.getRiskIcon(factor)}"></i>
-                                </div>
-                                <h5>${InsightsModule.formatRiskName(factor)}</h5>
-                                <div class="risk-percentage ${InsightsModule.getRiskClass(value)}">
-                                    ${value.toFixed(1)}%
-                                </div>
-                                <div class="risk-indicator">
-                                    <div class="indicator-bar">
-                                        <div class="indicator-fill" style="width: ${value}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <!-- Visualization Container -->
-                <div id="risk-gauge-chart" class="mt-4"></div>
-            </div>
+            <h4 style="color: white;">Tầm quan trọng của các yếu tố</h4>
+            <div id="feature-importance-chart"></div>
         `;
 
-        container.innerHTML = html;
+        setTimeout(() => {
+            const data = [{
+                x: sortedFeatures.map(f => f[1]),
+                y: sortedFeatures.map(f => f[0]),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: 'rgba(240, 147, 251, 0.8)',
+                    line: {
+                        color: 'rgba(240, 147, 251, 1)',
+                        width: 2
+                    }
+                }
+            }];
+
+            const layout = {
+                title: 'Top 10 Features',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: 'white' },
+                xaxis: { title: 'Importance Score' },
+                margin: { l: 150 }
+            };
+
+            Plotly.newPlot('feature-importance-chart', data, layout, {responsive: true});
+        }, 100);
+
+        return html;
     },
 
-    renderKeyInsights: (data) => {
-        const insights = [];
-
-        // Extract key insights from data
-        if (data.demographic_insights) {
-            if (data.demographic_insights.high_risk_industries) {
-                const topIndustry = Object.entries(data.demographic_insights.high_risk_industries)[0];
-                insights.push({
-                    type: 'warning',
-                    icon: 'industry',
-                    title: 'Ngành có rủi ro cao nhất',
-                    content: `${topIndustry[0]} với ${topIndustry[1].toFixed(1)}% nhân viên có vấn đề sức khỏe tinh thần`
-                });
-            }
-        }
-
-        if (data.anomaly_detection) {
-            insights.push({
-                type: 'info',
-                icon: 'exclamation-triangle',
-                title: 'Phát hiện bất thường',
-                content: `${data.anomaly_detection.percentage.toFixed(1)}% nhân viên có chỉ số bất thường cần theo dõi đặc biệt`
-            });
-        }
-
-        if (data.predictive_indicators && data.predictive_indicators.top_predictors) {
-            insights.push({
-                type: 'success',
-                icon: 'chart-line',
-                title: 'Yếu tố dự báo quan trọng nhất',
-                content: data.predictive_indicators.top_predictors[0].replace('_', ' ')
-            });
-        }
-
-        // Render insights cards
-        const container = document.createElement('div');
-        container.className = 'insights-cards-container mt-4';
-        container.innerHTML = `
-            <h4 class="text-white mb-3">💡 Key Insights</h4>
+    renderRecommendations: (recommendations) => {
+        return `
+            <h4 style="color: white;">Khuyến nghị dựa trên phân tích</h4>
             <div class="row">
-                ${insights.map(insight => `
-                    <div class="col-md-4">
-                        <div class="insight-card ${insight.type}">
-                            <div class="insight-icon">
-                                <i class="fas fa-${insight.icon}"></i>
-                            </div>
-                            <h5>${insight.title}</h5>
-                            <p>${insight.content}</p>
+                ${recommendations.map(rec => `
+                    <div class="col-md-12">
+                        <div class="recommendation-card priority-${rec.priority.toLowerCase()}">
+                            <h5 style="color: white;">
+                                <i class="fas fa-lightbulb"></i> ${rec.area}
+                            </h5>
+                            <p style="color: rgba(255,255,255,0.9);">${rec.recommendation}</p>
+                            <small style="color: rgba(255,255,255,0.7);">
+                                <i class="fas fa-chart-line"></i> Tác động dự kiến: ${rec.expected_impact}
+                            </small>
                         </div>
                     </div>
                 `).join('')}
             </div>
         `;
-
-        document.getElementById('ml-analysis-section').appendChild(container);
-    },
-
-    renderActionableRecommendations: (data) => {
-        const recommendations = [];
-
-        // Generate recommendations based on insights
-        if (data.risk_analysis.risk_factors.work_overload > 50) {
-            recommendations.push({
-                priority: 'high',
-                title: 'Giảm tải công việc',
-                action: 'Triển khai chính sách giới hạn giờ làm thêm và phân bổ lại khối lượng công việc',
-                impact: 'Giảm 30% nguy cơ burnout',
-                timeline: '1-2 tháng'
-            });
-        }
-
-        if (data.risk_analysis.risk_factors.social_isolation > 40) {
-            recommendations.push({
-                priority: 'medium',
-                title: 'Tăng cường kết nối',
-                action: 'Tổ chức team building hàng tháng và tạo không gian làm việc chung',
-                impact: 'Cải thiện 25% chỉ số hạnh phúc',
-                timeline: '2-3 tuần'
-            });
-        }
-
-        const container = document.createElement('div');
-        container.className = 'recommendations-container mt-4';
-        container.innerHTML = `
-            <h4 class="text-white mb-3">🎯 Khuyến nghị hành động</h4>
-            <div class="action-cards">
-                ${recommendations.map((rec, index) => `
-                    <div class="action-card priority-${rec.priority}">
-                        <div class="action-number">${index + 1}</div>
-                        <div class="action-content">
-                            <h5>${rec.title}</h5>
-                            <p class="action-description">${rec.action}</p>
-                            <div class="action-metrics">
-                                <span class="metric">
-                                    <i class="fas fa-chart-line"></i> ${rec.impact}
-                                </span>
-                                <span class="metric">
-                                    <i class="fas fa-clock"></i> ${rec.timeline}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-
-        document.getElementById('ml-analysis-section').appendChild(container);
-    },
-
-    renderVisualizations: (plots) => {
-        // Render enhanced visualizations
-        if (plots.risk_dashboard) {
-            const plotData = JSON.parse(plots.risk_dashboard);
-            Plotly.newPlot('risk-gauge-chart', plotData.data, plotData.layout, {responsive: true});
-        }
-
-        // Add more visualization containers as needed
-        const vizContainer = document.createElement('div');
-        vizContainer.className = 'enhanced-viz-container mt-4';
-        vizContainer.id = 'enhanced-visualizations';
-
-        document.getElementById('ml-analysis-section').appendChild(vizContainer);
-
-        // Render additional plots
-        Object.entries(plots).forEach(([key, plotJson]) => {
-            if (key !== 'risk_dashboard') {
-                const plotDiv = document.createElement('div');
-                plotDiv.id = `plot-${key}`;
-                plotDiv.className = 'plot-container mb-4';
-                vizContainer.appendChild(plotDiv);
-
-                const plotData = JSON.parse(plotJson);
-                Plotly.newPlot(plotDiv.id, plotData.data, plotData.layout, {responsive: true});
-            }
-        });
-    },
-
-    // Helper functions
-    getRiskClass: (value) => {
-        if (value > 60) return 'risk-high';
-        if (value > 40) return 'risk-medium';
-        return 'risk-low';
-    },
-
-    getRiskIcon: (factor) => {
-        const icons = {
-            'work_overload': 'briefcase',
-            'social_isolation': 'user-friends',
-            'work_life_imbalance': 'balance-scale',
-            'burnout_risk': 'fire'
-        };
-        return icons[factor] || 'exclamation-triangle';
-    },
-
-    formatRiskName: (factor) => {
-        const names = {
-            'work_overload': 'Quá tải công việc',
-            'social_isolation': 'Cô lập xã hội',
-            'work_life_imbalance': 'Mất cân bằng',
-            'burnout_risk': 'Nguy cơ kiệt sức'
-        };
-        return names[factor] || factor.replace('_', ' ');
     }
 };
 
@@ -996,5 +872,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 });
-
-
