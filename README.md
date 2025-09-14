@@ -5,7 +5,7 @@
 ## 🏗️ Kiến trúc hệ thống
 
 ```
-mental-health-analytics/
+project_nhu/
 ├── 📁 app.py                     # Flask application chính
 ├── 📁 templates/
 │   └── index.html               # Single Page Application (HTML, CSS, JS)
