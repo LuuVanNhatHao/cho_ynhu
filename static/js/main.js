@@ -479,6 +479,15 @@ const DataAnalysis = {
 // Enhanced Insights Module
 const InsightsModule = {
     displayInsightsDashboard: async () => {
+        // Show loading state
+        const container = document.getElementById('ml-analysis-section');
+        container.innerHTML = `
+            <div class="text-center" style="padding: 40px;">
+                <div class="loading-spinner"></div>
+                <p style="color: white; margin-top: 20px;">Đang tải phân tích...</p>
+            </div>
+        `;
+
         try {
             const response = await fetch('/api/enhanced_analytics');
             const data = await response.json();
@@ -489,9 +498,30 @@ const InsightsModule = {
                 InsightsModule.renderKeyInsights(data);
                 InsightsModule.renderActionableRecommendations(data);
                 InsightsModule.renderVisualizations(data.visualizations);
+            } else {
+                container.innerHTML = `
+                    <div class="text-center" style="padding: 40px; color: rgba(255,255,255,0.7);">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: #ffc107;"></i>
+                        <h4>Lỗi tải dữ liệu</h4>
+                        <p>${data.message}</p>
+                        <button class="btn-glass" onclick="InsightsModule.displayInsightsDashboard()">
+                            <i class="fas fa-redo"></i> Thử lại
+                        </button>
+                    </div>
+                `;
             }
         } catch (error) {
             console.error('Error loading insights:', error);
+            container.innerHTML = `
+                <div class="text-center" style="padding: 40px; color: rgba(255,255,255,0.7);">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: #dc3545;"></i>
+                    <h4>Lỗi kết nối</h4>
+                    <p>Không thể kết nối tới server. Vui lòng kiểm tra kết nối.</p>
+                    <button class="btn-glass" onclick="InsightsModule.displayInsightsDashboard()">
+                        <i class="fas fa-redo"></i> Thử lại
+                    </button>
+                </div>
+            `;
         }
     },
 
