@@ -144,9 +144,8 @@ const Navigation = {
                 }
                 break;
             case 'ml-analysis':
-                // Use enhanced analytics instead of ML
-                if (AppState.analysisResults.enhancedAnalytics) {
-                    InsightsModule.displayFromCache();
+                if (AppState.analysisResults.mlAnalysis) {
+                    MLAnalysis.display();
                 }
                 break;
             case 'clustering':
@@ -204,8 +203,6 @@ const DataManager = {
             Utils.showAutoLoadingStatus('error', '❌ Lỗi kết nối server');
             Utils.showAlert(`❌ Lỗi kết nối: ${error.message}`, 'error');
             return false;
-        } finally {
-            Utils.showLoading(false);
         }
     },
 
@@ -223,15 +220,14 @@ const DataManager = {
                 // Update quick stats
                 DataManager.updateQuickStats(data.basic_stats);
 
-                // Display data overview
+                // Show data overview
                 DataManager.displayDataOverview(data);
 
-                // Display initial plots if available
+                // Display initial plots
                 if (data.initial_plots) {
                     DataManager.displayInitialPlots(data.initial_plots);
                 }
 
-                Utils.showAutoLoadingStatus('success', '✅ Dữ liệu đã được tải lại thành công!');
                 return true;
             } else {
                 Utils.showAlert(`❌ ${data.message}`, 'error');
@@ -353,7 +349,7 @@ const DataAnalysis = {
             // Load all analyses in parallel
             const promises = [
                 DataAnalysis.loadVisualizations(),
-                DataAnalysis.loadEnhancedAnalytics(),
+                DataAnalysis.loadMLAnalysis(),
                 DataAnalysis.loadClustering(),
                 DataAnalysis.loadStatisticalTests()
             ];
@@ -362,7 +358,7 @@ const DataAnalysis = {
 
             Utils.showAlert('✅ Phân tích hoàn tất! Tất cả kết quả đã sẵn sàng.', 'success');
 
-            // Auto-switch to insights dashboard
+            // Auto-switch to ML analysis section
             Navigation.switchSection('ml-analysis');
 
         } catch (error) {
@@ -388,19 +384,19 @@ const DataAnalysis = {
         }
     },
 
-    loadEnhancedAnalytics: async () => {
+    loadMLAnalysis: async () => {
         try {
-            const response = await fetch('/api/enhanced_analytics');
+            const response = await fetch('/api/advanced_analysis');
             const data = await response.json();
 
             if (data.status === 'success') {
-                AppState.analysisResults.enhancedAnalytics = data;
-                AppState.recommendations = DataAnalysis.generateRecommendations(data);
+                AppState.analysisResults.mlAnalysis = data;
+                AppState.recommendations = data.recommendations || [];
                 return true;
             }
             return false;
         } catch (error) {
-            console.error('Error loading enhanced analytics:', error);
+            console.error('Error loading ML analysis:', error);
             return false;
         }
     },
@@ -435,283 +431,6 @@ const DataAnalysis = {
             console.error('Error loading statistical tests:', error);
             return false;
         }
-    },
-
-    generateRecommendations: (data) => {
-        const recommendations = [];
-
-        if (data.risk_analysis) {
-            if (data.risk_analysis.risk_factors.work_overload > 50) {
-                recommendations.push({
-                    priority: 'high',
-                    title: 'Giảm tải công việc',
-                    action: 'Triển khai chính sách giới hạn giờ làm thêm và phân bổ lại khối lượng công việc',
-                    impact: 'Giảm 30% nguy cơ burnout',
-                    timeline: '1-2 tháng'
-                });
-            }
-
-            if (data.risk_analysis.risk_factors.social_isolation > 40) {
-                recommendations.push({
-                    priority: 'medium',
-                    title: 'Tăng cường kết nối',
-                    action: 'Tổ chức team building hàng tháng và tạo không gian làm việc chung',
-                    impact: 'Cải thiện 25% chỉ số hạnh phúc',
-                    timeline: '2-3 tuần'
-                });
-            }
-
-            if (data.risk_analysis.risk_factors.work_life_imbalance > 45) {
-                recommendations.push({
-                    priority: 'high',
-                    title: 'Cân bằng công việc-cuộc sống',
-                    action: 'Triển khai chính sách làm việc linh hoạt và hỗ trợ làm việc từ xa',
-                    impact: 'Tăng 35% sự hài lòng',
-                    timeline: '1 tháng'
-                });
-            }
-        }
-
-        return recommendations;
-    }
-};
-
-// Enhanced Insights Module
-const InsightsModule = {
-    displayInsightsDashboard: async () => {
-        // Show loading state
-        const container = document.getElementById('ml-analysis-section');
-        container.innerHTML = `
-            <div class="text-center" style="padding: 40px;">
-                <div class="loading-spinner"></div>
-                <p style="color: white; margin-top: 20px;">Đang tải phân tích...</p>
-            </div>
-        `;
-
-        try {
-            const response = await fetch('/api/enhanced_analytics');
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                AppState.analysisResults.enhancedAnalytics = data;
-                InsightsModule.renderRiskDashboard(data.risk_analysis);
-                InsightsModule.renderKeyInsights(data);
-                InsightsModule.renderActionableRecommendations(data);
-                InsightsModule.renderVisualizations(data.visualizations);
-            } else {
-                container.innerHTML = `
-                    <div class="text-center" style="padding: 40px; color: rgba(255,255,255,0.7);">
-                        <i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: #ffc107;"></i>
-                        <h4>Lỗi tải dữ liệu</h4>
-                        <p>${data.message}</p>
-                        <button class="btn-glass" onclick="InsightsModule.displayInsightsDashboard()">
-                            <i class="fas fa-redo"></i> Thử lại
-                        </button>
-                    </div>
-                `;
-            }
-        } catch (error) {
-            console.error('Error loading insights:', error);
-            container.innerHTML = `
-                <div class="text-center" style="padding: 40px; color: rgba(255,255,255,0.7);">
-                    <i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: #dc3545;"></i>
-                    <h4>Lỗi kết nối</h4>
-                    <p>Không thể kết nối tới server. Vui lòng kiểm tra kết nối.</p>
-                    <button class="btn-glass" onclick="InsightsModule.displayInsightsDashboard()">
-                        <i class="fas fa-redo"></i> Thử lại
-                    </button>
-                </div>
-            `;
-        }
-    },
-
-    displayFromCache: () => {
-        const data = AppState.analysisResults.enhancedAnalytics;
-        if (data) {
-            InsightsModule.renderRiskDashboard(data.risk_analysis);
-            InsightsModule.renderKeyInsights(data);
-            InsightsModule.renderActionableRecommendations(data);
-            InsightsModule.renderVisualizations(data.visualizations);
-        }
-    },
-
-    renderRiskDashboard: (riskData) => {
-        const container = document.getElementById('ml-analysis-section');
-
-        const html = `
-            <div class="insights-dashboard">
-                <h3 class="chart-title">📊 Risk Assessment & Key Insights</h3>
-                
-                <!-- Overall Risk Score -->
-                <div class="risk-score-container">
-                    <div class="composite-risk-card ${InsightsModule.getRiskClass(riskData.composite_risk)}">
-                        <h4>Mức độ rủi ro tổng thể</h4>
-                        <div class="risk-meter">
-                            <div class="risk-value">${riskData.composite_risk.toFixed(1)}%</div>
-                            <div class="risk-level">${riskData.risk_level}</div>
-                        </div>
-                        <div class="risk-bar">
-                            <div class="risk-fill" style="width: ${riskData.composite_risk}%"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Individual Risk Factors -->
-                <div class="row mt-4">
-                    ${Object.entries(riskData.risk_factors).map(([factor, value]) => `
-                        <div class="col-md-3">
-                            <div class="risk-factor-card">
-                                <div class="risk-icon">
-                                    <i class="fas fa-${InsightsModule.getRiskIcon(factor)}"></i>
-                                </div>
-                                <h5>${InsightsModule.formatRiskName(factor)}</h5>
-                                <div class="risk-percentage ${InsightsModule.getRiskClass(value)}">
-                                    ${value.toFixed(1)}%
-                                </div>
-                                <div class="risk-indicator">
-                                    <div class="indicator-bar">
-                                        <div class="indicator-fill" style="width: ${value}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <!-- Visualization Container -->
-                <div id="risk-gauge-chart" class="mt-4"></div>
-            </div>
-        `;
-
-        container.innerHTML = html;
-    },
-
-    renderKeyInsights: (data) => {
-        const insights = [];
-
-        // Extract key insights from data
-        if (data.demographic_insights) {
-            if (data.demographic_insights.high_risk_industries) {
-                const topIndustry = Object.entries(data.demographic_insights.high_risk_industries)[0];
-                if (topIndustry) {
-                    insights.push({
-                        type: 'warning',
-                        icon: 'industry',
-                        title: 'Ngành có rủi ro cao nhất',
-                        content: `${topIndustry[0]} với ${topIndustry[1].toFixed(1)}% nhân viên có vấn đề sức khỏe tinh thần`
-                    });
-                }
-            }
-        }
-
-        if (data.anomaly_detection) {
-            insights.push({
-                type: 'info',
-                icon: 'exclamation-triangle',
-                title: 'Phát hiện bất thường',
-                content: `${data.anomaly_detection.percentage.toFixed(1)}% nhân viên có chỉ số bất thường cần theo dõi đặc biệt`
-            });
-        }
-
-        if (data.predictive_indicators && data.predictive_indicators.top_predictors) {
-            insights.push({
-                type: 'success',
-                icon: 'chart-line',
-                title: 'Yếu tố dự báo quan trọng nhất',
-                content: data.predictive_indicators.top_predictors[0].replace('_', ' ')
-            });
-        }
-
-        // Render insights cards
-        const container = document.createElement('div');
-        container.className = 'insights-cards-container mt-4';
-        container.innerHTML = `
-            <h4 class="text-white mb-3">💡 Key Insights</h4>
-            <div class="row">
-                ${insights.map(insight => `
-                    <div class="col-md-4">
-                        <div class="insight-card ${insight.type}">
-                            <div class="insight-icon">
-                                <i class="fas fa-${insight.icon}"></i>
-                            </div>
-                            <h5>${insight.title}</h5>
-                            <p>${insight.content}</p>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-
-        document.getElementById('ml-analysis-section').appendChild(container);
-    },
-
-    renderActionableRecommendations: (data) => {
-        const recommendations = AppState.recommendations.length > 0 ?
-            AppState.recommendations : DataAnalysis.generateRecommendations(data);
-
-        const container = document.createElement('div');
-        container.className = 'recommendations-container mt-4';
-        container.innerHTML = `
-            <h4 class="text-white mb-3">🎯 Khuyến nghị hành động</h4>
-            <div class="action-cards">
-                ${recommendations.map((rec, index) => `
-                    <div class="action-card priority-${rec.priority}">
-                        <div class="action-number">${index + 1}</div>
-                        <div class="action-content">
-                            <h5>${rec.title}</h5>
-                            <p class="action-description">${rec.action}</p>
-                            <div class="action-metrics">
-                                <span class="metric">
-                                    <i class="fas fa-chart-line"></i> ${rec.impact}
-                                </span>
-                                <span class="metric">
-                                    <i class="fas fa-clock"></i> ${rec.timeline}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-
-        document.getElementById('ml-analysis-section').appendChild(container);
-    },
-
-    renderVisualizations: (plots) => {
-        if (!plots) return;
-
-        // Render enhanced visualizations
-        if (plots.risk_dashboard) {
-            const plotData = JSON.parse(plots.risk_dashboard);
-            Plotly.newPlot('risk-gauge-chart', plotData.data, plotData.layout, {responsive: true});
-        }
-    },
-
-    // Helper functions
-    getRiskClass: (value) => {
-        if (value > 60) return 'risk-high';
-        if (value > 40) return 'risk-medium';
-        return 'risk-low';
-    },
-
-    getRiskIcon: (factor) => {
-        const icons = {
-            'work_overload': 'briefcase',
-            'social_isolation': 'user-friends',
-            'work_life_imbalance': 'balance-scale',
-            'burnout_risk': 'fire'
-        };
-        return icons[factor] || 'exclamation-triangle';
-    },
-
-    formatRiskName: (factor) => {
-        const names = {
-            'work_overload': 'Quá tải công việc',
-            'social_isolation': 'Cô lập xã hội',
-            'work_life_imbalance': 'Mất cân bằng',
-            'burnout_risk': 'Nguy cơ kiệt sức'
-        };
-        return names[factor] || factor.replace('_', ' ');
     }
 };
 
@@ -732,6 +451,128 @@ const Visualizations = {
             const plotData = JSON.parse(plots.correlation_heatmap);
             Plotly.newPlot('viz-heatmap', plotData.data, plotData.layout, {responsive: true});
         }
+
+        // Display Sunburst
+        if (plots.sunburst) {
+            const plotData = JSON.parse(plots.sunburst);
+            Plotly.newPlot('viz-sunburst', plotData.data, plotData.layout, {responsive: true});
+        }
+
+        // Display Violin
+        if (plots.violin_arrangement) {
+            const plotData = JSON.parse(plots.violin_arrangement);
+            Plotly.newPlot('viz-violin', plotData.data, plotData.layout, {responsive: true});
+        }
+    }
+};
+
+// ML Analysis Module
+const MLAnalysis = {
+    display: () => {
+        const data = AppState.analysisResults.mlAnalysis;
+        if (!data) return;
+
+        // Display model performance
+        const perfContainer = document.getElementById('ml-models-performance');
+        if (perfContainer) {
+            perfContainer.innerHTML = MLAnalysis.renderModelsPerformance(data.models_performance, data.best_model);
+        }
+
+        // Display feature importance
+        const featureContainer = document.getElementById('ml-feature-importance');
+        if (featureContainer) {
+            featureContainer.innerHTML = MLAnalysis.renderFeatureImportance(data.feature_importance);
+        }
+
+        // Display recommendations
+        const recContainer = document.getElementById('ml-recommendations');
+        if (recContainer && data.recommendations) {
+            recContainer.innerHTML = MLAnalysis.renderRecommendations(data.recommendations);
+        }
+    },
+
+    renderModelsPerformance: (models, bestModel) => {
+        return `
+            <h4 style="color: white;">Hiệu suất các mô hình ML</h4>
+            <div class="row">
+                ${Object.entries(models).map(([name, metrics]) => `
+                    <div class="col-md-4">
+                        <div class="model-card ${name === bestModel ? 'best-model' : ''}">
+                            <h5 style="color: white;">${name}</h5>
+                            <div style="color: rgba(255,255,255,0.9);">
+                                <p>Độ chính xác: <strong>${(metrics.accuracy * 100).toFixed(2)}%</strong></p>
+                                <p>CV Mean: ${(metrics.cv_mean * 100).toFixed(2)}%</p>
+                                <p>CV Std: ±${(metrics.cv_std * 100).toFixed(2)}%</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    },
+
+    renderFeatureImportance: (importance) => {
+        const firstModel = Object.keys(importance)[0];
+        const features = importance[firstModel];
+
+        const sortedFeatures = Object.entries(features)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+        const html = `
+            <h4 style="color: white;">Tầm quan trọng của các yếu tố</h4>
+            <div id="feature-importance-chart"></div>
+        `;
+
+        setTimeout(() => {
+            const data = [{
+                x: sortedFeatures.map(f => f[1]),
+                y: sortedFeatures.map(f => f[0]),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: 'rgba(240, 147, 251, 0.8)',
+                    line: {
+                        color: 'rgba(240, 147, 251, 1)',
+                        width: 2
+                    }
+                }
+            }];
+
+            const layout = {
+                title: 'Top 10 Features',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: 'white' },
+                xaxis: { title: 'Importance Score' },
+                margin: { l: 150 }
+            };
+
+            Plotly.newPlot('feature-importance-chart', data, layout, {responsive: true});
+        }, 100);
+
+        return html;
+    },
+
+    renderRecommendations: (recommendations) => {
+        return `
+            <h4 style="color: white;">Khuyến nghị dựa trên phân tích</h4>
+            <div class="row">
+                ${recommendations.map(rec => `
+                    <div class="col-md-12">
+                        <div class="recommendation-card priority-${rec.priority.toLowerCase()}">
+                            <h5 style="color: white;">
+                                <i class="fas fa-lightbulb"></i> ${rec.area}
+                            </h5>
+                            <p style="color: rgba(255,255,255,0.9);">${rec.recommendation}</p>
+                            <small style="color: rgba(255,255,255,0.7);">
+                                <i class="fas fa-chart-line"></i> Tác động dự kiến: ${rec.expected_impact}
+                            </small>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
     }
 };
 
@@ -823,6 +664,13 @@ const StatisticalTests = {
 const Recommendations = {
     display: () => {
         const recommendations = AppState.recommendations;
+        if (!recommendations || recommendations.length === 0) {
+            // Try to get from ML analysis
+            if (AppState.analysisResults.mlAnalysis && AppState.analysisResults.mlAnalysis.recommendations) {
+                recommendations.push(...AppState.analysisResults.mlAnalysis.recommendations);
+            }
+        }
+
         const container = document.getElementById('recommendations-content');
         if (container) {
             container.innerHTML = Recommendations.render(recommendations);
@@ -831,25 +679,32 @@ const Recommendations = {
 
     render: (recommendations) => {
         if (!recommendations || recommendations.length === 0) {
-            return '<p style="color: white;">Chưa có khuyến nghị. Vui lòng chạy phân tích trước.</p>';
+            return '<p style="color: white;">Chưa có khuyến nghị. Vui lòng chạy phân tích ML trước.</p>';
         }
 
         return `
             <div class="row">
                 ${recommendations.map((rec, index) => `
                     <div class="col-md-12 mb-3">
-                        <div class="action-card priority-${rec.priority}">
-                            <div class="action-number">${index + 1}</div>
-                            <div class="action-content">
-                                <h5>${rec.title}</h5>
-                                <p class="action-description">${rec.action}</p>
-                                <div class="action-metrics">
-                                    <span class="metric">
-                                        <i class="fas fa-chart-line"></i> ${rec.impact}
+                        <div class="recommendation-card priority-${(rec.priority || 'medium').toLowerCase()}">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <span class="badge bg-${Recommendations.getPriorityColor(rec.priority)}">
+                                        ${rec.priority}
                                     </span>
-                                    <span class="metric">
-                                        <i class="fas fa-clock"></i> ${rec.timeline}
-                                    </span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 style="color: white;">
+                                        <i class="fas fa-${Recommendations.getAreaIcon(rec.area)}"></i> 
+                                        ${rec.area}
+                                    </h5>
+                                    <p style="color: rgba(255,255,255,0.9);">${rec.recommendation}</p>
+                                    <div class="mt-2">
+                                        <small style="color: rgba(255,255,255,0.7);">
+                                            <i class="fas fa-chart-line"></i> 
+                                            Tác động dự kiến: <strong>${rec.expected_impact}</strong>
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -857,6 +712,132 @@ const Recommendations = {
                 `).join('')}
             </div>
         `;
+    },
+
+    getPriorityColor: (priority) => {
+        const colors = {
+            'Cao': 'danger',
+            'Trung bình': 'warning',
+            'Thấp': 'success'
+        };
+        return colors[priority] || 'secondary';
+    },
+
+    getAreaIcon: (area) => {
+        const icons = {
+            'Cân bằng công việc-cuộc sống': 'balance-scale',
+            'Tương tác xã hội': 'users',
+            'Quản lý thời gian': 'clock'
+        };
+        return icons[area] || 'lightbulb';
+    }
+};
+
+// Report Export Module
+const ReportExporter = {
+    exportReport: () => {
+        const reportData = ReportExporter.generateReportData();
+        const reportHtml = ReportExporter.generateReportHTML(reportData);
+        ReportExporter.downloadReport(reportHtml);
+    },
+
+    generateReportData: () => {
+        return {
+            timestamp: new Date().toLocaleString('vi-VN'),
+            dataLoaded: AppState.dataLoaded,
+            analysisResults: AppState.analysisResults,
+            recommendations: AppState.recommendations
+        };
+    },
+
+    generateReportHTML: (data) => {
+        return `
+            <!DOCTYPE html>
+            <html lang="vi">
+            <head>
+                <meta charset="UTF-8">
+                <title>Báo cáo Phân tích Sức khỏe Tinh thần</title>
+                <style>
+                    body { 
+                        font-family: 'Segoe UI', sans-serif; 
+                        margin: 40px;
+                        line-height: 1.6;
+                    }
+                    .header { 
+                        text-align: center; 
+                        margin-bottom: 40px;
+                        padding: 20px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        border-radius: 10px;
+                    }
+                    .section { 
+                        margin: 30px 0;
+                        padding: 20px;
+                        border-left: 4px solid #667eea;
+                        background: #f8f9fa;
+                    }
+                    h2 { color: #333; }
+                    .metric { 
+                        display: inline-block;
+                        margin: 10px;
+                        padding: 10px;
+                        background: white;
+                        border-radius: 5px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Báo cáo Phân tích Sức khỏe Tinh thần Người lao động</h1>
+                    <p>Được tạo vào: ${data.timestamp}</p>
+                </div>
+                
+                <div class="section">
+                    <h2>Tóm tắt Executive</h2>
+                    <p>Báo cáo này cung cấp phân tích toàn diện về các yếu tố ảnh hưởng đến sức khỏe tinh thần của người lao động, 
+                    sử dụng các thuật toán Machine Learning tiên tiến để đưa ra những insights có giá trị.</p>
+                </div>
+                
+                <div class="section">
+                    <h2>Kết quả Machine Learning</h2>
+                    ${data.analysisResults.mlAnalysis ? `
+                        <p>Mô hình tốt nhất: <strong>${data.analysisResults.mlAnalysis.best_model}</strong></p>
+                        <p>Độ chính xác: <strong>${(data.analysisResults.mlAnalysis.models_performance[data.analysisResults.mlAnalysis.best_model].accuracy * 100).toFixed(2)}%</strong></p>
+                    ` : '<p>Chưa có kết quả phân tích ML</p>'}
+                </div>
+                
+                <div class="section">
+                    <h2>Khuyến nghị chiến lược</h2>
+                    ${data.recommendations && data.recommendations.length > 0 ? 
+                        data.recommendations.map(rec => `
+                            <div style="margin-bottom: 15px;">
+                                <h3>${rec.area}</h3>
+                                <p>${rec.recommendation}</p>
+                                <p><em>Tác động dự kiến: ${rec.expected_impact}</em></p>
+                            </div>
+                        `).join('') : 
+                        '<p>Chưa có khuyến nghị</p>'
+                    }
+                </div>
+            </body>
+            </html>
+        `;
+    },
+
+    downloadReport: (htmlContent) => {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `mental_health_report_${new Date().getTime()}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        Utils.showAlert('✅ Báo cáo đã được tải xuống thành công!', 'success');
     }
 };
 
@@ -869,8 +850,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await DataManager.autoLoadData();
 
     // Event listeners
-    document.getElementById('reloadDataBtn')?.addEventListener('click', DataManager.reloadData);
-    document.getElementById('startAnalysisBtn')?.addEventListener('click', DataAnalysis.startFullAnalysis);
+    document.getElementById('reloadDataBtn').addEventListener('click', DataManager.reloadData);
+    document.getElementById('startAnalysisBtn').addEventListener('click', DataAnalysis.startFullAnalysis);
+    document.getElementById('exportReportBtn').addEventListener('click', ReportExporter.exportReport);
 
     // Feature cards click events
     document.querySelectorAll('.feature-card').forEach(card => {
@@ -880,7 +862,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 case 'advanced-viz':
                     Navigation.switchSection('visualizations');
                     break;
-                case 'insights':
+                case 'ml-models':
                     Navigation.switchSection('ml-analysis');
                     break;
                 case 'clustering':

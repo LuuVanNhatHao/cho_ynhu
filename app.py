@@ -6,16 +6,14 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.utils
 import json
-from sklearn.preprocessing import LabelEncoder, StandardScaler, RobustScaler
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, IsolationForest
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, silhouette_score
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
-from sklearn.feature_selection import SelectKBest, f_classif, mutual_info_classif
-from scipy.stats import chi2_contingency, ttest_ind, f_oneway, pointbiserialr
-from scipy import stats
+from scipy.stats import chi2_contingency, ttest_ind, f_oneway
 from datetime import datetime
 import warnings
 import os
@@ -63,6 +61,76 @@ class DataAnalyzer:
                 self.encoders[col] = le
 
         return self.processed_df
+
+    def advanced_feature_analysis(self):
+        """Advanced feature analysis with multiple algorithms"""
+        if self.processed_df is None:
+            self.preprocess_data()
+
+        # Prepare features
+        feature_cols = [col for col in self.processed_df.columns if col.endswith('_encoded')] + \
+                       ['Age', 'Hours_Per_Week', 'Work_Life_Balance_Score', 'Social_Isolation_Score']
+        feature_cols = [col for col in feature_cols if col in self.processed_df.columns]
+
+        if 'Mental_Health_Status' not in self.processed_df.columns:
+            return None
+
+        # Encode target variable
+        le_target = LabelEncoder()
+        y = le_target.fit_transform(self.processed_df['Mental_Health_Status'].astype(str))
+        X = self.processed_df[feature_cols]
+
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+        # Scale features
+        X_train_scaled = self.scaler.fit_transform(X_train)
+        X_test_scaled = self.scaler.transform(X_test)
+
+        # Multiple models comparison
+        models = {
+            'Random Forest': RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42),
+            'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=42),
+            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000)
+        }
+
+        results = {}
+        feature_importance_all = {}
+
+        for name, model in models.items():
+            if name == 'Logistic Regression':
+                model.fit(X_train_scaled, y_train)
+                y_pred = model.predict(X_test_scaled)
+                cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5)
+            else:
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                cv_scores = cross_val_score(model, X_train, y_train, cv=5)
+
+            accuracy = accuracy_score(y_test, y_pred)
+
+            results[name] = {
+                'accuracy': float(accuracy),
+                'cv_mean': float(cv_scores.mean()),
+                'cv_std': float(cv_scores.std()),
+                'model': model
+            }
+
+            # Feature importance
+            if hasattr(model, 'feature_importances_'):
+                feature_importance_all[name] = {col: float(imp) for col, imp in
+                                                zip(feature_cols, model.feature_importances_)}
+            elif hasattr(model, 'coef_'):
+                feature_importance_all[name] = {col: float(imp) for col, imp in
+                                                zip(feature_cols, np.abs(model.coef_[0]))}
+
+        return {
+            'models_performance': results,
+            'feature_importance': feature_importance_all,
+            'feature_names': feature_cols,
+            'target_encoder': le_target,
+            'best_model': max(results.keys(), key=lambda k: results[k]['accuracy'])
+        }
 
     def clustering_analysis(self):
         """Clustering analysis to find employee groups"""
@@ -132,163 +200,6 @@ class DataAnalyzer:
         }
 
 
-class EnhancedAnalyzer:
-    """Enhanced analytics với focus vào insights thay vì ML accuracy"""
-
-    def __init__(self, dataframe):
-        self.df = dataframe
-        self.insights = {}
-
-    def risk_scoring_analysis(self):
-        """Phân tích điểm rủi ro sức khỏe tinh thần"""
-        risk_factors = {
-            'work_overload': 0,
-            'social_isolation': 0,
-            'work_life_imbalance': 0,
-            'burnout_risk': 0
-        }
-
-        # Calculate risk scores
-        if 'Hours_Per_Week' in self.df.columns:
-            risk_factors['work_overload'] = (self.df['Hours_Per_Week'] > 50).mean() * 100
-
-        if 'Social_Isolation_Score' in self.df.columns:
-            risk_factors['social_isolation'] = (self.df['Social_Isolation_Score'] > self.df[
-                'Social_Isolation_Score'].median()).mean() * 100
-
-        if 'Work_Life_Balance_Score' in self.df.columns:
-            risk_factors['work_life_imbalance'] = (self.df['Work_Life_Balance_Score'] < 5).mean() * 100
-
-        if 'Burnout_Level' in self.df.columns:
-            high_burnout = self.df['Burnout_Level'].isin(['High', 'Medium']).mean() * 100
-            risk_factors['burnout_risk'] = high_burnout
-
-        # Calculate composite risk index
-        composite_risk = np.mean(list(risk_factors.values()))
-
-        return {
-            'risk_factors': risk_factors,
-            'composite_risk': composite_risk,
-            'risk_level': 'Cao' if composite_risk > 60 else 'Trung bình' if composite_risk > 40 else 'Thấp'
-        }
-
-    def demographic_insights(self):
-        """Phân tích insights theo nhóm nhân khẩu học"""
-        insights = {}
-
-        # Age group analysis
-        if 'Age' in self.df.columns and 'Mental_Health_Status' in self.df.columns:
-            age_groups = pd.cut(self.df['Age'], bins=[0, 25, 35, 45, 55, 100],
-                                labels=['Gen Z', 'Millennials', 'Gen X', 'Boomers', 'Senior'])
-
-            mental_by_age = pd.crosstab(age_groups, self.df['Mental_Health_Status'], normalize='index') * 100
-            insights['age_risk'] = mental_by_age.to_dict('index')
-
-        # Gender analysis
-        if 'Gender' in self.df.columns and 'Burnout_Level' in self.df.columns:
-            burnout_by_gender = pd.crosstab(self.df['Gender'], self.df['Burnout_Level'], normalize='index') * 100
-            insights['gender_burnout'] = burnout_by_gender.to_dict('index')
-
-        # Industry analysis
-        if 'Industry' in self.df.columns and 'Mental_Health_Status' in self.df.columns:
-            industry_risk = self.df.groupby('Industry')['Mental_Health_Status'].apply(
-                lambda x: (x != 'Good').mean() * 100
-            ).sort_values(ascending=False)
-            insights['high_risk_industries'] = industry_risk.head(5).to_dict()
-
-        return insights
-
-    def predictive_indicators(self):
-        """Xác định các chỉ báo dự đoán quan trọng nhất"""
-        if 'Mental_Health_Status' not in self.df.columns:
-            return None
-
-        # Prepare data
-        numeric_cols = self.df.select_dtypes(include=[np.number]).columns
-        X = self.df[numeric_cols].fillna(0)
-
-        # Encode target
-        y = (self.df['Mental_Health_Status'] != 'Good').astype(int)
-
-        # Mutual Information
-        mi_scores = mutual_info_classif(X, y)
-        mi_importance = pd.DataFrame({
-            'feature': numeric_cols,
-            'importance': mi_scores
-        }).sort_values('importance', ascending=False)
-
-        # Statistical correlation
-        correlations = {}
-        for col in numeric_cols:
-            corr, p_value = pointbiserialr(y, X[col])
-            correlations[col] = {
-                'correlation': abs(corr),
-                'p_value': p_value,
-                'significant': p_value < 0.05
-            }
-
-        return {
-            'mutual_information': mi_importance.head(10).to_dict('records'),
-            'correlations': correlations,
-            'top_predictors': mi_importance.head(5)['feature'].tolist()
-        }
-
-    def cohort_analysis(self):
-        """Phân tích theo cohort để tìm patterns"""
-        cohorts = {}
-
-        # Work arrangement cohorts
-        if 'Work_Arrangement' in self.df.columns:
-            for arrangement in self.df['Work_Arrangement'].unique():
-                cohort = self.df[self.df['Work_Arrangement'] == arrangement]
-                cohorts[arrangement] = {
-                    'size': len(cohort),
-                    'avg_isolation': cohort[
-                        'Social_Isolation_Score'].mean() if 'Social_Isolation_Score' in cohort.columns else None,
-                    'avg_wlb': cohort[
-                        'Work_Life_Balance_Score'].mean() if 'Work_Life_Balance_Score' in cohort.columns else None,
-                    'mental_health_distribution': cohort['Mental_Health_Status'].value_counts(
-                        normalize=True).to_dict() if 'Mental_Health_Status' in cohort.columns else None
-                }
-
-        return cohorts
-
-    def anomaly_detection(self):
-        """Phát hiện các outliers và anomalies"""
-        numeric_cols = self.df.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) < 2:
-            return None
-
-        X = self.df[numeric_cols].fillna(0)
-
-        # Isolation Forest
-        iso_forest = IsolationForest(contamination=0.1, random_state=42)
-        anomalies = iso_forest.fit_predict(X)
-
-        # Get anomaly indices
-        anomaly_indices = np.where(anomalies == -1)[0]
-
-        # Analyze anomalies
-        anomaly_analysis = {
-            'total_anomalies': len(anomaly_indices),
-            'percentage': (len(anomaly_indices) / len(self.df)) * 100,
-            'anomaly_characteristics': {}
-        }
-
-        if len(anomaly_indices) > 0:
-            anomaly_df = self.df.iloc[anomaly_indices]
-            normal_df = self.df.iloc[np.where(anomalies == 1)[0]]
-
-            for col in numeric_cols:
-                anomaly_analysis['anomaly_characteristics'][col] = {
-                    'anomaly_mean': float(anomaly_df[col].mean()),
-                    'normal_mean': float(normal_df[col].mean()),
-                    'difference': float(anomaly_df[col].mean() - normal_df[col].mean())
-                }
-
-        return anomaly_analysis
-
-
 def load_data():
     """Load and validate data"""
     global df
@@ -309,8 +220,11 @@ def load_data():
         return False, f"Lỗi khi đọc file: {str(e)}"
 
 
-def create_advanced_visualizations(df, analyzer=None):
+def create_advanced_visualizations():
     """Create advanced and interactive visualizations"""
+    if df is None:
+        return {}
+
     plots = {}
 
     try:
@@ -364,7 +278,9 @@ def create_advanced_visualizations(df, analyzer=None):
                                    y='Hours_Per_Week',
                                    z='Work_Life_Balance_Score',
                                    color='Mental_Health_Status',
-                                   title='Phân tích 3D: Tuổi - Giờ làm việc - Work-Life Balance')
+                                   title='Phân tích 3D: Tuổi - Giờ làm việc - Work-Life Balance',
+                                   labels={'Age': 'Tuổi', 'Hours_Per_Week': 'Giờ/tuần',
+                                           'Work_Life_Balance_Score': 'Điểm WLB'})
             plots['scatter_3d'] = json.dumps(fig_3d, cls=plotly.utils.PlotlyJSONEncoder)
 
         # 3. Correlation Heatmap
@@ -372,54 +288,27 @@ def create_advanced_visualizations(df, analyzer=None):
         if len(numeric_cols) > 3:
             correlation_matrix = df[numeric_cols].corr()
             fig_heatmap = px.imshow(correlation_matrix,
+                                    labels=dict(color="Tương quan"),
                                     title="Ma trận tương quan chi tiết",
                                     color_continuous_scale='RdBu_r')
+            fig_heatmap.update_layout(width=800, height=600)
             plots['correlation_heatmap'] = json.dumps(fig_heatmap, cls=plotly.utils.PlotlyJSONEncoder)
 
-        # Enhanced visualizations if analyzer is provided
-        if analyzer:
-            # Risk Dashboard với Gauge Charts
-            risk_analysis = analyzer.risk_scoring_analysis()
+        # 4. Sunburst Chart
+        if all(col in df.columns for col in ['Region', 'Industry', 'Mental_Health_Status']):
+            fig_sunburst = px.sunburst(df,
+                                       path=['Region', 'Industry', 'Mental_Health_Status'],
+                                       title='Phân bố đa cấp: Vùng miền - Ngành nghề - Sức khỏe tinh thần')
+            plots['sunburst'] = json.dumps(fig_sunburst, cls=plotly.utils.PlotlyJSONEncoder)
 
-            fig_risk = make_subplots(
-                rows=2, cols=2,
-                specs=[[{'type': 'indicator'}, {'type': 'indicator'}],
-                       [{'type': 'indicator'}, {'type': 'indicator'}]],
-                subplot_titles=('Quá tải công việc', 'Cô lập xã hội',
-                                'Mất cân bằng công việc-cuộc sống', 'Rủi ro Burnout')
-            )
-
-            risk_items = list(risk_analysis['risk_factors'].items())
-            positions = [(1, 1), (1, 2), (2, 1), (2, 2)]
-
-            for (name, value), (row, col) in zip(risk_items, positions):
-                fig_risk.add_trace(
-                    go.Indicator(
-                        mode="gauge+number+delta",
-                        value=value,
-                        domain={'x': [0, 1], 'y': [0, 1]},
-                        title={'text': name.replace('_', ' ').title()},
-                        delta={'reference': 50},
-                        gauge={
-                            'axis': {'range': [None, 100]},
-                            'bar': {'color': "darkred" if value > 60 else "orange" if value > 40 else "green"},
-                            'steps': [
-                                {'range': [0, 40], 'color': "lightgray"},
-                                {'range': [40, 60], 'color': "gray"},
-                                {'range': [60, 100], 'color': "lightgray"}
-                            ],
-                            'threshold': {
-                                'line': {'color': "red", 'width': 4},
-                                'thickness': 0.75,
-                                'value': 60
-                            }
-                        }
-                    ),
-                    row=row, col=col
-                )
-
-            fig_risk.update_layout(height=600, title_text="Risk Assessment Dashboard")
-            plots['risk_dashboard'] = json.dumps(fig_risk, cls=plotly.utils.PlotlyJSONEncoder)
+        # 5. Violin plots
+        if all(col in df.columns for col in ['Work_Arrangement', 'Social_Isolation_Score']):
+            fig_violin = px.violin(df,
+                                   x='Work_Arrangement',
+                                   y='Social_Isolation_Score',
+                                   color='Work_Arrangement',
+                                   title='Mức độ cô lập theo hình thức làm việc')
+            plots['violin_arrangement'] = json.dumps(fig_violin, cls=plotly.utils.PlotlyJSONEncoder)
 
     except Exception as e:
         print(f"Error creating visualizations: {str(e)}")
@@ -457,7 +346,7 @@ def perform_statistical_tests():
     results = {}
 
     try:
-        # Chi-square test
+        # Chi-square test for categorical variables
         if all(col in df.columns for col in ['Gender', 'Mental_Health_Status']):
             contingency_table = pd.crosstab(df['Gender'], df['Mental_Health_Status'])
             chi2, p_value, dof, expected = chi2_contingency(contingency_table)
@@ -470,7 +359,7 @@ def perform_statistical_tests():
                 'interpretation': 'Có mối liên hệ có ý nghĩa' if p_value < 0.05 else 'Không có mối liên hệ có ý nghĩa'
             }
 
-        # T-test
+        # T-test for work hours vs mental health
         if all(col in df.columns for col in ['Hours_Per_Week', 'Mental_Health_Status']):
             mental_categories = df['Mental_Health_Status'].unique()
             if len(mental_categories) >= 2:
@@ -485,10 +374,64 @@ def perform_statistical_tests():
                     'interpretation': 'Có sự khác biệt có ý nghĩa' if p_value < 0.05 else 'Không có sự khác biệt có ý nghĩa'
                 }
 
+        # ANOVA for work-life balance across mental health categories
+        if all(col in df.columns for col in ['Work_Life_Balance_Score', 'Mental_Health_Status']):
+            groups = [group['Work_Life_Balance_Score'].dropna() for name, group in df.groupby('Mental_Health_Status')]
+            if len(groups) >= 2:
+                f_stat, p_value = f_oneway(*groups)
+
+                results['anova_wlb_mental'] = {
+                    'test_name': 'ANOVA: Work-Life Balance giữa các nhóm sức khỏe tinh thần',
+                    'statistic': float(f_stat),
+                    'p_value': float(p_value),
+                    'interpretation': 'Có sự khác biệt có ý nghĩa giữa các nhóm' if p_value < 0.05 else 'Không có sự khác biệt có ý nghĩa'
+                }
+
     except Exception as e:
         results['error'] = f'Lỗi thực hiện kiểm định: {str(e)}'
 
     return results
+
+
+def generate_recommendations(analysis_result):
+    """Generate recommendations based on analysis results"""
+    recommendations = []
+
+    if 'feature_importance' in analysis_result:
+        best_model = analysis_result['best_model']
+        feature_importance = analysis_result['feature_importance'][best_model]
+
+        # Sort features by importance
+        sorted_features = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
+
+        # Generate specific recommendations
+        top_feature = sorted_features[0][0] if sorted_features else ''
+
+        if 'Work_Life_Balance' in top_feature:
+            recommendations.append({
+                'priority': 'Cao',
+                'area': 'Cân bằng công việc-cuộc sống',
+                'recommendation': 'Thiết lập chính sách linh hoạt về thời gian làm việc và khuyến khích nhân viên sử dụng thời gian nghỉ phép.',
+                'expected_impact': 'Cải thiện 25-30% tình trạng sức khỏe tinh thần'
+            })
+
+        if 'Social_Isolation' in str(sorted_features[:3]):
+            recommendations.append({
+                'priority': 'Cao',
+                'area': 'Tương tác xã hội',
+                'recommendation': 'Tổ chức các hoạt động team building định kỳ và tạo không gian làm việc chung thân thiện.',
+                'expected_impact': 'Giảm 20-25% mức độ cô lập xã hội'
+            })
+
+        if 'Hours_Per_Week' in str(sorted_features[:3]):
+            recommendations.append({
+                'priority': 'Trung bình',
+                'area': 'Quản lý thời gian',
+                'recommendation': 'Giám sát và kiểm soát số giờ làm việc, tránh tình trạng làm việc quá tải thường xuyên.',
+                'expected_impact': 'Cải thiện 15-20% tình trạng burnout'
+            })
+
+    return recommendations
 
 
 # Routes
@@ -519,7 +462,7 @@ def api_initial_load():
             sample_data = sample_data.fillna('N/A')
 
             # Create initial visualizations
-            plots = create_advanced_visualizations(df)
+            plots = create_advanced_visualizations()
 
             response_data = {
                 'status': 'success',
@@ -545,42 +488,49 @@ def api_advanced_visualizations():
         return jsonify({'status': 'error', 'message': 'Chưa tải dữ liệu'})
 
     try:
-        plots = create_advanced_visualizations(df)
+        plots = create_advanced_visualizations()
         return jsonify({'status': 'success', 'plots': plots})
     except Exception as e:
+        print(f"Error in advanced_visualizations: {str(e)}")
         return jsonify({'status': 'error', 'message': f'Lỗi tạo biểu đồ: {str(e)}'})
 
 
-@app.route('/api/enhanced_analytics')
-def api_enhanced_analytics():
+@app.route('/api/advanced_analysis')
+def api_advanced_analysis():
     if df is None:
         return jsonify({'status': 'error', 'message': 'Chưa tải dữ liệu'})
 
     try:
-        analyzer = EnhancedAnalyzer(df)
+        analyzer = DataAnalyzer(df)
 
-        # Get all enhanced analyses
-        risk_analysis = analyzer.risk_scoring_analysis()
-        demographic_insights = analyzer.demographic_insights()
-        predictive_indicators = analyzer.predictive_indicators()
-        cohort_analysis = analyzer.cohort_analysis()
-        anomaly_detection = analyzer.anomaly_detection()
+        # Cache analysis results
+        if 'advanced_analysis' not in analysis_cache:
+            analysis_cache['advanced_analysis'] = analyzer.advanced_feature_analysis()
 
-        # Create enhanced visualizations
-        plots = create_advanced_visualizations(df, analyzer)
+        result = analysis_cache['advanced_analysis']
 
-        return jsonify({
+        if result is None:
+            return jsonify({'status': 'error', 'message': 'Không thể thực hiện phân tích nâng cao'})
+
+        # Format results for frontend
+        formatted_result = {
             'status': 'success',
-            'risk_analysis': risk_analysis,
-            'demographic_insights': demographic_insights,
-            'predictive_indicators': predictive_indicators,
-            'cohort_analysis': cohort_analysis,
-            'anomaly_detection': anomaly_detection,
-            'visualizations': plots
-        })
+            'models_performance': {
+                name: {
+                    'accuracy': data['accuracy'],
+                    'cv_mean': data['cv_mean'],
+                    'cv_std': data['cv_std']
+                } for name, data in result['models_performance'].items()
+            },
+            'feature_importance': result['feature_importance'],
+            'best_model': result['best_model'],
+            'recommendations': generate_recommendations(result)
+        }
+
+        return jsonify(formatted_result)
 
     except Exception as e:
-        print(f"Error in enhanced analytics: {str(e)}")
+        print(f"Error in advanced_analysis: {str(e)}")
         return jsonify({'status': 'error', 'message': f'Lỗi phân tích: {str(e)}'})
 
 
@@ -614,6 +564,7 @@ def api_clustering_analysis():
         })
 
     except Exception as e:
+        print(f"Error in clustering_analysis: {str(e)}")
         return jsonify({'status': 'error', 'message': f'Lỗi phân tích clustering: {str(e)}'})
 
 
@@ -626,6 +577,7 @@ def api_statistical_tests():
         tests_results = perform_statistical_tests()
         return jsonify({'status': 'success', 'tests': tests_results})
     except Exception as e:
+        print(f"Error in statistical_tests: {str(e)}")
         return jsonify({'status': 'error', 'message': f'Lỗi thử nghiệm thống kê: {str(e)}'})
 
 
