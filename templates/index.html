@@ -3,243 +3,369 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mental Health Analytics Platform</title>
+    <title>Advanced Analytics Platform - Professional Data Science Suite</title>
 
     <!-- External Libraries -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
 
-    <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-
-    <!-- Plotly and D3 -->
+    <!-- Plotly for Visualizations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.24.1/plotly.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link href="/static/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingContainer" class="loading-container">
-        <div>
-            <div class="loading-spinner"></div>
-            <div class="loading-text">Đang tải dữ liệu...</div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+            <div class="mt-3">Đang xử lý...</div>
         </div>
     </div>
 
-    <!-- Auto-loading Status -->
-    <div id="autoLoadingStatus" class="auto-loading-status" style="display: none;">
-        <div class="status-indicator loading"></div>
-        <span id="statusText">Đang tự động tải dữ liệu...</span>
-    </div>
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <button class="btn btn-dark" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a class="navbar-brand mx-auto">
+                <i class="fas fa-chart-line"></i> Advanced Analytics Platform
+            </a>
+            <div class="navbar-text">
+                <span id="dataStatus" class="badge bg-secondary">Not Loaded</span>
+            </div>
+        </div>
+    </nav>
 
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar -->
     <div id="sidebar" class="sidebar">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h4 style="color: white; font-weight: 700;">
-                <i class="fas fa-brain" style="color: var(--accent-color);"></i>
-                Mental Analytics
-            </h4>
+        <div class="sidebar-header">
+            <h5><i class="fas fa-layer-group"></i> Analysis Modules</h5>
         </div>
 
-        <div class="nav-item active" data-section="dashboard">
-            <i class="fas fa-tachometer-alt"></i>
-            <span>Dashboard</span>
+        <div class="nav-section">
+            <div class="nav-item active" data-section="overview">
+                <i class="fas fa-home"></i> Overview
+            </div>
+            <div class="nav-item" data-section="clustering">
+                <i class="fas fa-project-diagram"></i> Clustering Analysis
+            </div>
+            <div class="nav-item" data-section="statistics">
+                <i class="fas fa-chart-bar"></i> Statistical Analysis
+            </div>
+            <div class="nav-item" data-section="visualization">
+                <i class="fas fa-chart-pie"></i> Visualizations
+            </div>
+            <div class="nav-item" data-section="export">
+                <i class="fas fa-download"></i> Export Results
+            </div>
         </div>
 
-        <div class="nav-item" data-section="data-overview">
-            <i class="fas fa-database"></i>
-            <span>Tổng quan dữ liệu</span>
+        <div class="sidebar-footer">
+            <button class="btn btn-sm btn-outline-light w-100" onclick="location.reload()">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
         </div>
-
-        <div class="nav-item" data-section="visualizations">
-            <i class="fas fa-chart-pie"></i>
-            <span>Trực quan hóa</span>
-        </div>
-
-        <div class="nav-item" data-section="ml-analysis">
-            <i class="fas fa-robot"></i>
-            <span>Phân tích ML</span>
-        </div>
-
-        <div class="nav-item" data-section="clustering">
-            <i class="fas fa-project-diagram"></i>
-            <span>Phân nhóm</span>
-        </div>
-
-        <div class="nav-item" data-section="statistical-tests">
-            <i class="fas fa-calculator"></i>
-            <span>Kiểm định thống kê</span>
-        </div>
-
-        <div class="nav-item" data-section="recommendations">
-            <i class="fas fa-lightbulb"></i>
-            <span>Khuyến nghị</span>
-        </div>
-    </div>
-
-    <!-- Sidebar Toggle -->
-    <div id="sidebarToggle" class="sidebar-toggle">
-        <i class="fas fa-bars"></i>
     </div>
 
     <!-- Main Content -->
     <div id="mainContent" class="main-content">
-        <!-- Header -->
-        <div class="header-section animate__animated animate__fadeInDown">
-            <h1><i class="fas fa-brain"></i> Mental Health Analytics Platform</h1>
-            <p>Hệ thống phân tích chuyên sâu sức khỏe tinh thần người lao động với AI và Machine Learning</p>
 
-            <div style="margin-top: 25px;">
-                <button id="reloadDataBtn" class="btn-glass me-3">
-                    <i class="fas fa-sync"></i> Tải lại dữ liệu
-                </button>
-                <button id="startAnalysisBtn" class="btn-glass me-3">
-                    <i class="fas fa-play"></i> Phân tích toàn diện
-                </button>
-                <button id="exportReportBtn" class="btn-glass">
-                    <i class="fas fa-download"></i> Xuất báo cáo
+        <!-- Overview Section -->
+        <section id="overview-section" class="content-section active">
+            <div class="section-header">
+                <h2>Data Overview</h2>
+                <button class="btn btn-primary" id="loadDataBtn">
+                    <i class="fas fa-database"></i> Load Data
                 </button>
             </div>
-        </div>
 
-        <!-- Alert Messages -->
-        <div id="alertContainer"></div>
-
-        <!-- Dashboard Section -->
-        <div id="dashboard-section" class="content-section">
-            <!-- Quick Stats -->
-            <div id="quickStats" class="row">
+            <div class="row" id="dataStats">
                 <div class="col-md-3">
-                    <div class="stats-card animate__animated animate__fadeInUp">
-                        <div class="icon"><i class="fas fa-users"></i></div>
-                        <div class="value" id="totalRecords">-</div>
-                        <div class="label">Tổng số mẫu</div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-table"></i></div>
+                        <div class="stat-value" id="totalRows">-</div>
+                        <div class="stat-label">Total Rows</div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="stats-card animate__animated animate__fadeInUp animate__delay-1s">
-                        <div class="icon"><i class="fas fa-columns"></i></div>
-                        <div class="value" id="totalColumns">-</div>
-                        <div class="label">Số cột dữ liệu</div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-columns"></i></div>
+                        <div class="stat-value" id="totalCols">-</div>
+                        <div class="stat-label">Total Columns</div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="stats-card animate__animated animate__fadeInUp animate__delay-2s">
-                        <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
-                        <div class="value" id="missingValues">-</div>
-                        <div class="label">Giá trị thiếu</div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-sort-numeric-up"></i></div>
+                        <div class="stat-value" id="numericCols">-</div>
+                        <div class="stat-label">Numeric Columns</div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="stats-card animate__animated animate__fadeInUp animate__delay-3s">
-                        <div class="icon"><i class="fas fa-memory"></i></div>
-                        <div class="value" id="memoryUsage">- MB</div>
-                        <div class="label">Dung lượng</div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-font"></i></div>
+                        <div class="stat-value" id="categoricalCols">-</div>
+                        <div class="stat-label">Categorical Columns</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Initial Dashboard Chart -->
-            <div id="dashboardChart" class="chart-container" style="display: none;">
-                <h3 class="chart-title">Dashboard Tổng quan</h3>
-                <div id="dashboardPlotArea"></div>
-            </div>
-
-            <!-- Features Overview -->
             <div class="row mt-4">
-                <div class="col-md-4">
-                    <div class="feature-card" data-feature="advanced-viz">
-                        <div class="feature-icon"><i class="fas fa-chart-area"></i></div>
-                        <div class="feature-title">Trực quan hóa nâng cao</div>
-                        <div class="feature-description">Biểu đồ 3D, Sunburst, Heatmap tương tác và Dashboard tổng quan</div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Numeric Columns</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="numericColumnsList" class="column-list"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="feature-card" data-feature="ml-models">
-                        <div class="feature-icon"><i class="fas fa-brain"></i></div>
-                        <div class="feature-title">Machine Learning</div>
-                        <div class="feature-description">Random Forest, Gradient Boosting, Logistic Regression với cross-validation</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="feature-card" data-feature="clustering">
-                        <div class="feature-icon"><i class="fas fa-sitemap"></i></div>
-                        <div class="feature-title">Phân nhóm thông minh</div>
-                        <div class="feature-description">K-means clustering với PCA projection và silhouette analysis</div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Categorical Columns</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="categoricalColumnsList" class="column-list"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Data Overview Section -->
-        <div id="data-overview-section" class="content-section" style="display: none;">
-            <div class="chart-container">
-                <h3 class="chart-title">Thông tin tổng quan dữ liệu</h3>
-                <div id="dataOverviewContent"></div>
-            </div>
-        </div>
-
-        <!-- Visualizations Section -->
-        <div id="visualizations-section" class="content-section" style="display: none;">
-            <div class="chart-container">
-                <h3 class="chart-title">Trực quan hóa nâng cao</h3>
-                <div class="row">
-                    <div class="col-12 mb-4">
-                        <div id="viz-3d-scatter" class="viz-container"></div>
+            <div class="mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Basic Statistics</h5>
                     </div>
-                    <div class="col-md-6 mb-4">
-                        <div id="viz-heatmap" class="viz-container"></div>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <div id="viz-sunburst" class="viz-container"></div>
-                    </div>
-                    <div class="col-12 mb-4">
-                        <div id="viz-violin" class="viz-container"></div>
+                    <div class="card-body">
+                        <div id="basicStatsContent"></div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- ML Analysis Section -->
-        <div id="ml-analysis-section" class="content-section" style="display: none;">
-            <div class="chart-container">
-                <h3 class="chart-title">Phân tích Machine Learning</h3>
-                <div id="ml-models-performance"></div>
-                <div id="ml-feature-importance" class="mt-4"></div>
-                <div id="ml-recommendations" class="mt-4"></div>
-            </div>
-        </div>
+        </section>
 
         <!-- Clustering Section -->
-        <div id="clustering-section" class="content-section" style="display: none;">
-            <div class="chart-container">
-                <h3 class="chart-title">Phân tích Clustering</h3>
-                <div id="clustering-results"></div>
-                <div id="clustering-visualization" class="mt-4"></div>
+        <section id="clustering-section" class="content-section">
+            <div class="section-header">
+                <h2>Clustering Analysis</h2>
             </div>
-        </div>
 
-        <!-- Statistical Tests Section -->
-        <div id="statistical-tests-section" class="content-section" style="display: none;">
-            <div class="chart-container">
-                <h3 class="chart-title">Kiểm định thống kê</h3>
-                <div id="statistical-tests-results"></div>
-            </div>
-        </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Configuration</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Algorithm</label>
+                                <select id="clusterAlgorithm" class="form-select">
+                                    <option value="kmeans">K-Means</option>
+                                    <option value="agglomerative">Agglomerative</option>
+                                    <option value="gmm">Gaussian Mixture</option>
+                                    <option value="hdbscan" disabled>HDBSCAN</option>
+                                    <option value="kprototypes" disabled>K-Prototypes</option>
+                                </select>
+                            </div>
 
-        <!-- Recommendations Section -->
-        <div id="recommendations-section" class="content-section" style="display: none;">
-            <div class="chart-container">
-                <h3 class="chart-title">Khuyến nghị chiến lược</h3>
-                <div id="recommendations-content"></div>
+                            <div class="mb-3">
+                                <label class="form-label">Number of Clusters</label>
+                                <input type="number" id="nClusters" class="form-control" value="3" min="2" max="20">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Numeric Features</label>
+                                <div id="numericFeatures" class="feature-selector"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Categorical Features</label>
+                                <div id="categoricalFeatures" class="feature-selector"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="scaleNumeric" checked>
+                                    <label class="form-check-label" for="scaleNumeric">
+                                        Scale Numeric Features
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary w-100" id="runClusteringBtn">
+                                <i class="fas fa-play"></i> Run Clustering
+                            </button>
+
+                            <button class="btn btn-secondary w-100 mt-2" id="findOptimalKBtn">
+                                <i class="fas fa-search"></i> Find Optimal K
+                            </button>
+
+                            <button class="btn btn-info w-100 mt-2" id="stabilityAnalysisBtn">
+                                <i class="fas fa-shield-alt"></i> Stability Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="clusteringResults">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-info-circle fa-3x"></i>
+                                    <p class="mt-3">No clustering results yet. Configure and run clustering to see results.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5>Visualizations</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="clusteringVisualization"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
+
+        <!-- Statistical Analysis Section -->
+        <section id="statistics-section" class="content-section">
+            <div class="section-header">
+                <h2>Statistical Analysis</h2>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Configuration</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Target Variable (Optional)</label>
+                                <select id="targetVariable" class="form-select">
+                                    <option value="">None</option>
+                                </select>
+                            </div>
+
+                            <button class="btn btn-primary w-100" id="runStatisticsBtn">
+                                <i class="fas fa-calculator"></i> Run Statistical Analysis
+                            </button>
+
+                            <button class="btn btn-secondary w-100 mt-2" id="outlierDetectionBtn">
+                                <i class="fas fa-exclamation-triangle"></i> Detect Outliers
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Statistical Tests Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="statisticalResults">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-chart-bar fa-3x"></i>
+                                    <p class="mt-3">No statistical analysis yet. Run analysis to see results.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5>Statistical Visualizations</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="statisticalVisualization"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Visualization Section -->
+        <section id="visualization-section" class="content-section">
+            <div class="section-header">
+                <h2>Data Visualizations</h2>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div id="mainVisualization" style="min-height: 600px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Export Section -->
+        <section id="export-section" class="content-section">
+            <div class="section-header">
+                <h2>Export Results</h2>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Export Options</h5>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-success w-100 mb-2" id="exportCSVBtn">
+                                <i class="fas fa-file-csv"></i> Export Data with Clusters (CSV)
+                            </button>
+                            <button class="btn btn-info w-100 mb-2" id="exportJSONBtn">
+                                <i class="fas fa-file-code"></i> Export Analysis Summary (JSON)
+                            </button>
+                            <button class="btn btn-primary w-100" id="exportReportBtn">
+                                <i class="fas fa-file-pdf"></i> Generate Full Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Export Preview</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="exportPreview">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-download fa-3x"></i>
+                                    <p class="mt-3">Select an export option to see preview</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="alert-container"></div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
     <!-- Custom JavaScript -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>
