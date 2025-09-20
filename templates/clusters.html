@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Personas & Clustering - WorkWell{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 fw-bold text-primary">
+                <i class="fas fa-users-cog"></i> Employee Personas & Clustering
+            </h1>
+            <p class="lead text-muted">Discover workforce segments through advanced clustering analysis</p>
+        </div>
+    </div>
+    
+    <!-- Clustering Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <i class="fas fa-sliders-h"></i> Clustering Configuration
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Number of Clusters</label>
+                            <input type="range" class="form-range" id="n-clusters" min="3" max="8" value="5">
+                            <div class="text-center">
+                                <span class="badge bg-primary fs-5" id="n-clusters-display">5</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Clustering Method</label>
+                            <select class="form-select" id="cluster-method">
+                                <option value="kmeans">K-Means</option>
+                                <option value="gaussian_mixture">Gaussian Mixture</option>
+                                <option value="hierarchical">Hierarchical</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Features to Include</label>
+                            <select class="form-select" id="cluster-features" multiple>
+                                <option value="age" selected>Age</option>
+                                <option value="hours" selected>Hours Per Week</option>
+                                <option value="wlb" selected>Work-Life Balance</option>
+                                <option value="isolation" selected>Social Isolation</option>
+                                <option value="burnout" selected>Burnout Level</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary btn-lg w-100" onclick="performClustering()">
+                                <i class="fas fa-magic"></i> Generate Personas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Clustering Quality Metrics -->
+    <div class="row mb-4" id="metrics-row" style="display: none;">
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h4 class="text-success" id="silhouette-score">-</h4>
+                    <p class="mb-0">Silhouette Score</p>
+                    <small class="text-muted">Clustering Quality (0-1)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h4 class="text-info" id="n-personas">-</h4>
+                    <p class="mb-0">Personas Identified</p>
+                    <small class="text-muted">Distinct Employee Groups</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h4 class="text-warning" id="largest-cluster">-</h4>
+                    <p class="mb-0">Largest Cluster</p>
+                    <small class="text-muted">% of Employees</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Visualization Tabs -->
+    <ul class="nav nav-tabs mb-4" id="clusterTabs" role="tablist" style="display: none;">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#visualization">
+                <i class="fas fa-chart-scatter"></i> Visualization
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#personas">
+                <i class="fas fa-id-card"></i> Personas
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#profiles">
+                <i class="fas fa-chart-radar"></i> Profiles
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#drivers">
+                <i class="fas fa-chart-bar"></i> Key Drivers
+            </a>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <div class="tab-content" id="clusterTabContent">
+        <!-- Visualization Tab -->
+        <div class="tab-pane fade show active" id="visualization">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-project-diagram"></i> UMAP Cluster Visualization
+                        </div>
+                        <div class="card-body">
+                            <div id="umap-chart" style="height: 600px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mt-4">
+                    <div class="card">
+                        <div class="card-header">Cluster Size Distribution</div>
+                        <div class="card-body">
+                            <div id="cluster-sizes-chart" style="height: 400px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mt-4">
+                    <div class="card">
+                        <div class="card-header">Cluster Characteristics</div>
+                        <div class="card-body">
+                            <div id="cluster-characteristics-chart" style="height: 400px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Personas Tab -->
+        <div class="tab-pane fade" id="personas">
+            <div class="row" id="personas-container">
+                <!-- Persona cards will be dynamically generated here -->
+            </div>
+        </div>
+        
+        <!-- Profiles Tab -->
+        <div class="tab-pane fade" id="profiles">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-chart-radar"></i> Cluster Profile Comparison
+                        </div>
+                        <div class="card-body">
+                            <div id="radar-chart" style="height: 600px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 mt-4">
+                    <div class="card">
+                        <div class="card-header">Detailed Metrics by Cluster</div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="cluster-metrics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Cluster</th>
+                                            <th>Size</th>
+                                            <th>Avg Age</th>
+                                            <th>Avg Hours</th>
+                                            <th>WLB Score</th>
+                                            <th>Isolation</th>
+                                            <th>Top Industry</th>
+                                            <th>Burnout Risk</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="metrics-tbody">
+                                        <!-- Rows will be populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key Drivers Tab -->
+        <div class="tab-pane fade" id="drivers">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">Select Cluster</div>
+                        <div class="card-body">
+                            <select class="form-select mb-3" id="driver-cluster-select">
+                                <!-- Options will be populated dynamically -->
+                            </select>
+                            <button class="btn btn-primary w-100" onclick="analyzeDrivers()">
+                                <i class="fas fa-search"></i> Analyze Drivers
+                            </button>
+                            <div class="mt-3" id="driver-stats">
+                                <!-- Driver statistics will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar"></i> Feature Importance
+                        </div>
+                        <div class="card-body">
+                            <div id="drivers-chart" style="height: 500px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Initial State Message -->
+    <div class="row" id="initial-message">
+        <div class="col-12">
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="fas fa-users fa-5x text-muted mb-4"></i>
+                    <h3>Ready to Discover Employee Personas</h3>
+                    <p class="lead text-muted">Configure clustering parameters above and click "Generate Personas" to begin</p>
+                    <button class="btn btn-primary btn-lg mt-3" onclick="performClustering()">
+                        <i class="fas fa-magic"></i> Start Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Section -->
+    <div class="row mt-5" id="export-section" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-download"></i> Export & Actions
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-success me-2" onclick="exportPersonas()">
+                        <i class="fas fa-file-excel"></i> Export Personas
+                    </button>
+                    <button class="btn btn-info me-2" onclick="saveModel()">
+                        <i class="fas fa-save"></i> Save Model
+                    </button>
+                    <button class="btn btn-warning me-2" onclick="compareModels()">
+                        <i class="fas fa-exchange-alt"></i> Compare Methods
+                    </button>
+                    <button class="btn btn-primary" onclick="generateReport()">
+                        <i class="fas fa-file-pdf"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.persona-card {
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.persona-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.persona-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.persona-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.metric-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    margin: 2px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/clusters.js') }}"></script>
+{% endblock %}

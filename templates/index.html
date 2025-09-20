@@ -1,371 +1,266 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Analytics Platform - Professional Data Science Suite</title>
+{% extends "base.html" %}
 
-    <!-- External Libraries -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+{% block title %}Dashboard - WorkWell Analytics{% endblock %}
 
-    <!-- Plotly for Visualizations -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.24.1/plotly.min.js"></script>
-
-    <!-- Custom CSS -->
-    <link href="/static/css/style.css" rel="stylesheet">
-</head>
-<body>
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-content">
-            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
-            <div class="mt-3">Đang xử lý...</div>
-        </div>
-    </div>
-
-    <!-- Top Navigation -->
-    <nav class="navbar navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            <button class="btn btn-dark" id="sidebarToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-            <a class="navbar-brand mx-auto">
-                <i class="fas fa-chart-line"></i> Advanced Analytics Platform
-            </a>
-            <div class="navbar-text">
-                <span id="dataStatus" class="badge bg-secondary">Not Loaded</span>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Sidebar -->
-    <div id="sidebar" class="sidebar">
-        <div class="sidebar-header">
-            <h5><i class="fas fa-layer-group"></i> Analysis Modules</h5>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-item active" data-section="overview">
-                <i class="fas fa-home"></i> Overview
-            </div>
-            <div class="nav-item" data-section="clustering">
-                <i class="fas fa-project-diagram"></i> Clustering Analysis
-            </div>
-            <div class="nav-item" data-section="statistics">
-                <i class="fas fa-chart-bar"></i> Statistical Analysis
-            </div>
-            <div class="nav-item" data-section="visualization">
-                <i class="fas fa-chart-pie"></i> Visualizations
-            </div>
-            <div class="nav-item" data-section="export">
-                <i class="fas fa-download"></i> Export Results
-            </div>
-        </div>
-
-        <div class="sidebar-footer">
-            <button class="btn btn-sm btn-outline-light w-100" onclick="location.reload()">
-                <i class="fas fa-sync"></i> Refresh
-            </button>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div id="mainContent" class="main-content">
-
-        <!-- Overview Section -->
-        <section id="overview-section" class="content-section active">
-            <div class="section-header">
-                <h2>Data Overview</h2>
-                <button class="btn btn-primary" id="loadDataBtn">
-                    <i class="fas fa-database"></i> Load Data
-                </button>
-            </div>
-
-            <div class="row" id="dataStats">
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-table"></i></div>
-                        <div class="stat-value" id="totalRows">-</div>
-                        <div class="stat-label">Total Rows</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-columns"></i></div>
-                        <div class="stat-value" id="totalCols">-</div>
-                        <div class="stat-label">Total Columns</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-sort-numeric-up"></i></div>
-                        <div class="stat-value" id="numericCols">-</div>
-                        <div class="stat-label">Numeric Columns</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-font"></i></div>
-                        <div class="stat-value" id="categoricalCols">-</div>
-                        <div class="stat-label">Categorical Columns</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Numeric Columns</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="numericColumnsList" class="column-list"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Categorical Columns</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="categoricalColumnsList" class="column-list"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Basic Statistics</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="basicStatsContent"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Clustering Section -->
-        <section id="clustering-section" class="content-section">
-            <div class="section-header">
-                <h2>Clustering Analysis</h2>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Configuration</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label">Algorithm</label>
-                                <select id="clusterAlgorithm" class="form-select">
-                                    <option value="kmeans">K-Means</option>
-                                    <option value="agglomerative">Agglomerative</option>
-                                    <option value="gmm">Gaussian Mixture</option>
-                                    <option value="hdbscan" disabled>HDBSCAN</option>
-                                    <option value="kprototypes" disabled>K-Prototypes</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Number of Clusters</label>
-                                <input type="number" id="nClusters" class="form-control" value="3" min="2" max="20">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Numeric Features</label>
-                                <div id="numericFeatures" class="feature-selector"></div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Categorical Features</label>
-                                <div id="categoricalFeatures" class="feature-selector"></div>
-                            </div>
-
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="scaleNumeric" checked>
-                                    <label class="form-check-label" for="scaleNumeric">
-                                        Scale Numeric Features
-                                    </label>
-                                </div>
-                            </div>
-
-                            <button class="btn btn-primary w-100" id="runClusteringBtn">
-                                <i class="fas fa-play"></i> Run Clustering
-                            </button>
-
-                            <button class="btn btn-secondary w-100 mt-2" id="findOptimalKBtn">
-                                <i class="fas fa-search"></i> Find Optimal K
-                            </button>
-
-                            <button class="btn btn-info w-100 mt-2" id="stabilityAnalysisBtn">
-                                <i class="fas fa-shield-alt"></i> Stability Analysis
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Results</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="clusteringResults">
-                                <div class="text-center text-muted">
-                                    <i class="fas fa-info-circle fa-3x"></i>
-                                    <p class="mt-3">No clustering results yet. Configure and run clustering to see results.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card mt-3">
-                        <div class="card-header">
-                            <h5>Visualizations</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="clusteringVisualization"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Statistical Analysis Section -->
-        <section id="statistics-section" class="content-section">
-            <div class="section-header">
-                <h2>Statistical Analysis</h2>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Configuration</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label">Target Variable (Optional)</label>
-                                <select id="targetVariable" class="form-select">
-                                    <option value="">None</option>
-                                </select>
-                            </div>
-
-                            <button class="btn btn-primary w-100" id="runStatisticsBtn">
-                                <i class="fas fa-calculator"></i> Run Statistical Analysis
-                            </button>
-
-                            <button class="btn btn-secondary w-100 mt-2" id="outlierDetectionBtn">
-                                <i class="fas fa-exclamation-triangle"></i> Detect Outliers
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Statistical Tests Results</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="statisticalResults">
-                                <div class="text-center text-muted">
-                                    <i class="fas fa-chart-bar fa-3x"></i>
-                                    <p class="mt-3">No statistical analysis yet. Run analysis to see results.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card mt-3">
-                        <div class="card-header">
-                            <h5>Statistical Visualizations</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="statisticalVisualization"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Visualization Section -->
-        <section id="visualization-section" class="content-section">
-            <div class="section-header">
-                <h2>Data Visualizations</h2>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div id="mainVisualization" style="min-height: 600px;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Export Section -->
-        <section id="export-section" class="content-section">
-            <div class="section-header">
-                <h2>Export Results</h2>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Export Options</h5>
-                        </div>
-                        <div class="card-body">
-                            <button class="btn btn-success w-100 mb-2" id="exportCSVBtn">
-                                <i class="fas fa-file-csv"></i> Export Data with Clusters (CSV)
-                            </button>
-                            <button class="btn btn-info w-100 mb-2" id="exportJSONBtn">
-                                <i class="fas fa-file-code"></i> Export Analysis Summary (JSON)
-                            </button>
-                            <button class="btn btn-primary w-100" id="exportReportBtn">
-                                <i class="fas fa-file-pdf"></i> Generate Full Report
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Export Preview</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="exportPreview">
-                                <div class="text-center text-muted">
-                                    <i class="fas fa-download fa-3x"></i>
-                                    <p class="mt-3">Select an export option to see preview</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
+{% block content %}
+<div class="container-fluid">
     <!-- Alert Container -->
-    <div id="alertContainer" class="alert-container"></div>
+    <div id="alert-container"></div>
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 fw-bold text-primary">
+                <i class="fas fa-tachometer-alt"></i> Executive Dashboard
+            </h1>
+            <p class="lead text-muted">Real-time insights into workforce well-being and productivity</p>
+        </div>
+    </div>
+    
+    <!-- Key Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stat-card">
+                <div class="stat-number text-primary">{{ "{:,}".format(stats.total_records) }}</div>
+                <div class="stat-label">Total Employees</div>
+                <i class="fas fa-users fa-2x text-muted mt-2"></i>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stat-card">
+                <div class="stat-number text-success">{{ stats.regions }}</div>
+                <div class="stat-label">Regions</div>
+                <i class="fas fa-globe fa-2x text-muted mt-2"></i>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stat-card">
+                <div class="stat-number text-info">{{ "{:.1f}".format(stats.avg_hours) }}</div>
+                <div class="stat-label">Avg Hours/Week</div>
+                <i class="fas fa-clock fa-2x text-muted mt-2"></i>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stat-card">
+                <div class="stat-number text-danger">{{ "{:.1f}%".format(stats.burnout_rate) }}</div>
+                <div class="stat-label">High Burnout Rate</div>
+                <i class="fas fa-fire fa-2x text-muted mt-2"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Charts Row -->
+    <div class="row mb-4">
+        <!-- Work-Life Balance Overview -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-balance-scale"></i> Work-Life Balance Overview
+                </div>
+                <div class="card-body">
+                    <div id="wlb-overview-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie"></i> Quick Insights
+                </div>
+                <div class="card-body">
+                    <div id="quick-insights-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Secondary Charts Row -->
+    <div class="row mb-4">
+        <!-- Burnout Trends -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-fire-extinguisher"></i> Burnout Analysis
+                </div>
+                <div class="card-body">
+                    <div id="burnout-trends-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Department Comparison -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-building"></i> Department Comparison
+                </div>
+                <div class="card-body">
+                    <div id="department-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Explore Data</h5>
+                    <p class="card-text">Deep dive into employee demographics and work patterns</p>
+                    <a href="/eda" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i> View EDA
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-microscope fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Test Hypotheses</h5>
+                    <p class="card-text">Statistical analysis of workplace factors</p>
+                    <a href="/hypothesis" class="btn btn-success">
+                        <i class="fas fa-arrow-right"></i> Run Tests
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-users-cog fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Discover Personas</h5>
+                    <p class="card-text">Employee clustering and persona analysis</p>
+                    <a href="/clusters" class="btn btn-info">
+                        <i class="fas fa-arrow-right"></i> View Personas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Key Findings Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <i class="fas fa-lightbulb"></i> Key Findings & Recommendations
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-danger">
+                                <i class="fas fa-exclamation-triangle"></i> Areas of Concern
+                            </h6>
+                            <ul id="concerns-list">
+                                <li>High burnout rate exceeding industry standards</li>
+                                <li>Significant work-life balance challenges in certain departments</li>
+                                <li>Increasing social isolation scores among remote workers</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-success">
+                                <i class="fas fa-check-circle"></i> Positive Trends
+                            </h6>
+                            <ul id="positives-list">
+                                <li>Flexible work arrangements showing positive impact</li>
+                                <li>Mental health awareness programs gaining traction</li>
+                                <li>Cross-generational collaboration improving</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Load main charts
+    loadWLBOverview();
+    loadQuickInsights();
+    loadBurnoutTrends();
+    loadDepartmentComparison();
+    
+    // Refresh data every 5 minutes
+    setInterval(function() {
+        refreshDashboard();
+    }, 300000);
+});
 
-    <!-- Custom JavaScript -->
-    <script src="/static/js/main.js"></script>
-</body>
-</html>
+function loadWLBOverview() {
+    fetch('/api/eda/work_arrangement')
+        .then(response => response.json())
+        .then(data => {
+            Plotly.newPlot('wlb-overview-chart', data.data, data.layout, {responsive: true});
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function loadQuickInsights() {
+    fetch('/api/eda/demographics')
+        .then(response => response.json())
+        .then(data => {
+            // Extract pie chart from demographics
+            if (data.data && data.data.length > 1) {
+                Plotly.newPlot('quick-insights-chart', [data.data[1]], 
+                    {title: 'Gender Distribution', height: 400}, 
+                    {responsive: true});
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function loadBurnoutTrends() {
+    fetch('/api/eda/burnout_distribution')
+        .then(response => response.json())
+        .then(data => {
+            Plotly.newPlot('burnout-trends-chart', data.data, data.layout, {responsive: true});
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function loadDepartmentComparison() {
+    fetch('/api/eda/industry_comparison')
+        .then(response => response.json())
+        .then(data => {
+            Plotly.newPlot('department-chart', data.data, data.layout, {responsive: true});
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function refreshDashboard() {
+    showAlert('Refreshing dashboard data...', 'info');
+    loadWLBOverview();
+    loadQuickInsights();
+    loadBurnoutTrends();
+    loadDepartmentComparison();
+}
+
+// Export functionality
+function exportDashboard() {
+    fetch('/api/export/eda_report')
+        .then(response => response.json())
+        .then(data => {
+            // Convert to CSV or download
+            console.log('Export data:', data);
+            showAlert('Report exported successfully!', 'success');
+        })
+        .catch(error => {
+            showAlert('Export failed: ' + error, 'danger');
+        });
+}
+</script>
+{% endblock %}
