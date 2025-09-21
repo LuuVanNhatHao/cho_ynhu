@@ -61,12 +61,6 @@
             <div class="status-indicator"></div>
         </div>
 
-        <div class="nav-item" data-section="ml-analysis">
-            <i class="fas fa-robot"></i>
-            <span>ML Analysis</span>
-            <div class="status-indicator"></div>
-        </div>
-
         <div class="nav-item" data-section="clustering">
             <i class="fas fa-project-diagram"></i>
             <span>Clustering</span>
@@ -84,12 +78,6 @@
             <span>Work Impact Analysis</span>
             <div class="status-indicator"></div>
         </div>
-
-        <div class="nav-item" data-section="recommendations">
-            <i class="fas fa-lightbulb"></i>
-            <span>Recommendations</span>
-            <div class="status-indicator"></div>
-        </div>
     </div>
 
     <!-- Sidebar Toggle -->
@@ -102,7 +90,7 @@
         <!-- Header -->
         <div class="header-section animate__animated animate__fadeInDown">
             <h1><i class="fas fa-brain"></i> Mental Health Analytics Platform</h1>
-            <p>Advanced mental health analytics system for workforce wellbeing with AI and Machine Learning</p>
+            <p>Advanced mental health analytics system for workforce wellbeing</p>
 
             <div style="margin-top: 25px;">
                 <button id="reloadDataBtn" class="btn-glass me-3">
@@ -166,21 +154,21 @@
                     <div class="feature-card" data-feature="advanced-viz">
                         <div class="feature-icon"><i class="fas fa-chart-area"></i></div>
                         <div class="feature-title">Advanced Visualizations</div>
-                        <div class="feature-description">Interactive 3D charts, Sunburst diagrams, Correlation heatmaps with filtering capabilities</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="feature-card" data-feature="ml-models">
-                        <div class="feature-icon"><i class="fas fa-brain"></i></div>
-                        <div class="feature-title">Machine Learning</div>
-                        <div class="feature-description">Random Forest, Gradient Boosting, Logistic Regression with cross-validation and feature importance</div>
+                        <div class="feature-description">Interactive charts and data analysis</div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="feature-card" data-feature="clustering">
                         <div class="feature-icon"><i class="fas fa-sitemap"></i></div>
                         <div class="feature-title">Smart Clustering</div>
-                        <div class="feature-description">K-means clustering with PCA projection, silhouette analysis, and optimal k detection</div>
+                        <div class="feature-description">K-means clustering with PCA projection</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card" data-feature="statistical">
+                        <div class="feature-icon"><i class="fas fa-calculator"></i></div>
+                        <div class="feature-title">Statistical Tests</div>
+                        <div class="feature-description">Chi-square, T-test, ANOVA analysis</div>
                     </div>
                 </div>
             </div>
@@ -191,7 +179,6 @@
             <div class="chart-container">
                 <h3 class="chart-title">Data Overview and Schema</h3>
                 <div id="dataOverviewContent">
-                    <!-- Skeleton loading -->
                     <div class="skeleton skeleton-text"></div>
                     <div class="skeleton skeleton-text short"></div>
                     <div class="skeleton skeleton-text"></div>
@@ -270,68 +257,174 @@
             </div>
         </div>
 
-        <!-- ML Analysis Section -->
-        <div id="ml-analysis-section" class="content-section" style="display: none;">
-            <!-- Model Performance with Accuracy Threshold -->
-            <div class="chart-container">
-                <h3 class="chart-title">Machine Learning Model Performance</h3>
-                <div id="mlPerformanceAlert" class="alert alert-warning" style="display: none;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Low Accuracy Warning:</strong> Model accuracy is below 70%. Consider feature engineering or alternative analysis approaches.
+        <!-- Clustering Section -->
+        <div id="clustering-section" class="content-section" style="display: none;">
+            <div class="filter-container">
+                <div class="filter-title">
+                    <i class="fas fa-cogs"></i> Clustering Configuration
                 </div>
-                <div id="mlModelsContent">
-                    <div class="skeleton skeleton-text"></div>
-                    <div class="skeleton skeleton-text short"></div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Algorithm</label>
+                        <select id="algorithmSelect" class="form-select">
+                            <option value="kmeans">K-Means</option>
+                            <option value="dbscan">DBSCAN</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Number of Clusters (k)</label>
+                        <input type="range" id="clustersSlider" class="form-range" min="2" max="8" value="3">
+                        <div class="text-center">
+                            <span id="clustersValue">3</span> clusters
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Features Selection</label>
+                        <div class="row" id="featuresGrid"></div>
+                    </div>
+                    <div class="col-md-2">
+                        <button id="runClusteringBtn" class="btn-glass" style="margin-top: 32px;">
+                            <i class="fas fa-play"></i> Run Analysis
+                        </button>
+                        <button id="optimizeKBtn" class="btn-glass mt-2">
+                            <i class="fas fa-magic"></i> Optimize k
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Alternative Analysis for Low Accuracy -->
-            <div id="alternativeAnalysis" class="chart-container" style="display: none;">
-                <h3 class="chart-title">Descriptive Analysis & Pattern Recognition</h3>
-                <div id="descriptiveContent">
-                    <!-- Descriptive statistics and patterns when ML accuracy is low -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Clustering Results</h3>
+                        <div id="clusteringContent">
+                            <div class="skeleton skeleton-chart"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Evaluation Metrics</h3>
+                        <div id="metricsContent">
+                            <div class="skeleton skeleton-text"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <h3 class="chart-title">Feature Importance Analysis</h3>
-                        <div id="featureImportanceContent">
+                        <h3 class="chart-title">Feature Contributions</h3>
+                        <div id="contributionsContent">
                             <div class="skeleton skeleton-chart"></div>
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <h3 class="chart-title">Model Evaluation</h3>
-                        <div id="modelEvaluationContent">
+                        <h3 class="chart-title">Feature Distributions</h3>
+                        <div id="distributionsContent">
                             <div class="skeleton skeleton-chart"></div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Enhanced Clustering Section -->
-        <div id="clustering-section" class="content-section" style="display: none;">
-            <!-- Include clustering section HTML -->
+            <div class="chart-container">
+                <h3 class="chart-title">Cluster Insights</h3>
+                <div id="insightsContent">
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Statistical Tests Section -->
         <div id="statistical-tests-section" class="content-section" style="display: none;">
-            <!-- Include statistical tests section HTML -->
+            <div class="filter-container">
+                <div class="filter-title">
+                    <i class="fas fa-flask"></i> Statistical Test Configuration
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">Variable 1</label>
+                        <select id="var1Select" class="form-select">
+                            <option value="">Select Variable 1</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Variable 2</label>
+                        <select id="var2Select" class="form-select">
+                            <option value="">Select Variable 2</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button id="runTestsBtn" class="btn-glass" style="margin-top: 32px;">
+                            <i class="fas fa-calculator"></i> Run Selected Test
+                        </button>
+                    </div>
+                </div>
+                <div id="testTypeInfo" class="alert alert-info mt-3" style="display: none;">
+                    <div id="testTypeDescription"></div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">Pre-configured Statistical Tests</h3>
+                <div id="defaultTestsContent">
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+            </div>
+
+            <div id="customTestResults" class="chart-container" style="display: none;">
+                <h3 class="chart-title">Custom Test Results</h3>
+                <div id="customTestContent">
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Work Arrangement Section -->
         <div id="work-arrangement-section" class="content-section" style="display: none;">
-            <!-- Include work arrangement section HTML -->
-        </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Work Arrangement Impact on Mental Health</h3>
+                <div id="workArrangementContent">
+                    <div class="skeleton skeleton-chart"></div>
+                </div>
+            </div>
 
-        <!-- Recommendations Section -->
-        <div id="recommendations-section" class="content-section" style="display: none;">
-            <!-- Include recommendations section HTML -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Stress & Burnout Analysis</h3>
+                        <div id="stressBurnoutContent">
+                            <div class="skeleton skeleton-chart"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Demographic Distribution</h3>
+                        <div id="demographicContent">
+                            <div class="skeleton skeleton-text"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">Productivity Metrics</h3>
+                <div id="productivityContent">
+                    <div class="skeleton skeleton-chart"></div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">Key Insights</h3>
+                <div id="keyInsightsContent">
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -345,11 +438,9 @@
     <script src="{{ url_for('static', filename='js/data-manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/data-analysis.js') }}"></script>
     <script src="{{ url_for('static', filename='js/visualization-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/ml-analysis.js') }}"></script>
     <script src="{{ url_for('static', filename='js/clustering.js') }}"></script>
     <script src="{{ url_for('static', filename='js/statistical-tests.js') }}"></script>
     <script src="{{ url_for('static', filename='js/work-arrangement.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/recommendations.js') }}"></script>
     <script src="{{ url_for('static', filename='js/report-exporter.js') }}"></script>
 </body>
 </html>

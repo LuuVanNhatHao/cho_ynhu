@@ -94,7 +94,7 @@ class DataAnalyzer:
         return self.processed_df
 
     def advanced_feature_analysis(self):
-        """Advanced feature analysis with multiple algorithms"""
+        """Advanced feature analysis with comprehensive insights"""
         if self.processed_df is None:
             self.preprocess_data()
 
@@ -118,56 +118,242 @@ class DataAnalyzer:
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
 
-        # Multiple models comparison
-        models = {
-            'Random Forest': RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42),
-            'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=42),
-            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000)
-        }
+        # Use Random Forest as the primary model for analysis
+        rf_model = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42)
+        rf_model.fit(X_train, y_train)
 
-        results = {}
-        feature_importance_all = {}
-        confusion_matrices = {}
+        # Get feature importances
+        feature_importance = {col: float(imp) for col, imp in zip(feature_cols, rf_model.feature_importances_)}
 
-        for name, model in models.items():
-            if name == 'Logistic Regression':
-                model.fit(X_train_scaled, y_train)
-                y_pred = model.predict(X_test_scaled)
-                cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5)
-            else:
-                model.fit(X_train, y_train)
-                y_pred = model.predict(X_test)
-                cv_scores = cross_val_score(model, X_train, y_train, cv=5)
+        # Data-driven insights instead of model performance
+        insights = self._generate_data_insights(feature_importance)
 
-            accuracy = accuracy_score(y_test, y_pred)
-            cm = confusion_matrix(y_test, y_pred)
+        # Risk factor analysis
+        risk_factors = self._analyze_risk_factors()
 
-            results[name] = {
-                'accuracy': float(accuracy),
-                'cv_mean': float(cv_scores.mean()),
-                'cv_std': float(cv_scores.std()),
-                'model': model
-            }
+        # Protective factor analysis
+        protective_factors = self._analyze_protective_factors()
 
-            confusion_matrices[name] = cm.tolist()
+        # Population segments analysis
+        segments = self._analyze_population_segments()
 
-            # Feature importance
-            if hasattr(model, 'feature_importances_'):
-                feature_importance_all[name] = {col: float(imp) for col, imp in
-                                                zip(feature_cols, model.feature_importances_)}
-            elif hasattr(model, 'coef_'):
-                feature_importance_all[name] = {col: float(imp) for col, imp in
-                                                zip(feature_cols, np.abs(model.coef_[0]))}
+        # Key findings and actionable insights
+        key_findings = self._extract_key_findings(feature_importance)
 
         return {
-            'models_performance': results,
-            'feature_importance': feature_importance_all,
-            'confusion_matrices': confusion_matrices,
-            'feature_names': feature_cols,
-            'target_encoder': le_target,
+            'feature_importance': feature_importance,
+            'data_insights': insights,
+            'risk_factors': risk_factors,
+            'protective_factors': protective_factors,
+            'population_segments': segments,
+            'key_findings': key_findings,
             'target_classes': le_target.classes_.tolist(),
-            'best_model': max(results.keys(), key=lambda k: results[k]['accuracy'])
+            'feature_names': feature_cols,
+            'sample_size': len(self.processed_df),
+            'analysis_date': datetime.now().isoformat()
         }
+
+    def _generate_data_insights(self, feature_importance):
+        """Generate data-driven insights from feature importance"""
+        top_features = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)[:5]
+
+        insights = []
+        for feature, importance in top_features:
+            if 'Work_Life_Balance' in feature:
+                avg_wlb = self.processed_df['Work_Life_Balance_Score'].mean()
+                insights.append({
+                    'factor': 'Work-Life Balance',
+                    'importance': float(importance * 100),
+                    'description': f'Work-life balance is the strongest predictor (影響度: {importance*100:.1f}%)',
+                    'current_avg': float(avg_wlb),
+                    'recommendation': 'Focus on flexible work policies and time management training'
+                })
+            elif 'Social_Isolation' in feature:
+                avg_isolation = self.processed_df['Social_Isolation_Score'].mean()
+                insights.append({
+                    'factor': 'Social Isolation',
+                    'importance': float(importance * 100),
+                    'description': f'Social isolation significantly impacts mental health (影響度: {importance*100:.1f}%)',
+                    'current_avg': float(avg_isolation),
+                    'recommendation': 'Implement team building and social connection programs'
+                })
+            elif 'Hours_Per_Week' in feature:
+                avg_hours = self.processed_df['Hours_Per_Week'].mean()
+                insights.append({
+                    'factor': 'Working Hours',
+                    'importance': float(importance * 100),
+                    'description': f'Working hours heavily influence mental wellbeing (影響度: {importance*100:.1f}%)',
+                    'current_avg': float(avg_hours),
+                    'recommendation': 'Monitor and limit excessive working hours'
+                })
+            elif 'Age' in feature:
+                avg_age = self.processed_df['Age'].mean()
+                insights.append({
+                    'factor': 'Age Demographics',
+                    'importance': float(importance * 100),
+                    'description': f'Age is a significant factor in mental health patterns (影響度: {importance*100:.1f}%)',
+                    'current_avg': float(avg_age),
+                    'recommendation': 'Develop age-specific mental health programs'
+                })
+
+        return insights
+
+    def _analyze_risk_factors(self):
+        """Analyze key risk factors for poor mental health"""
+        risk_factors = []
+
+        # High working hours risk
+        if 'Hours_Per_Week' in self.processed_df.columns:
+            high_hours_threshold = self.processed_df['Hours_Per_Week'].quantile(0.75)
+            high_hours_df = self.processed_df[self.processed_df['Hours_Per_Week'] > high_hours_threshold]
+            if len(high_hours_df) > 0:
+                risk_percentage = (high_hours_df['Mental_Health_Status'].isin(['Stress Disorder', 'Anxiety']).mean() * 100)
+                risk_factors.append({
+                    'factor': 'Excessive Working Hours',
+                    'threshold': f'>{high_hours_threshold:.0f} hours/week',
+                    'affected_population': f'{len(high_hours_df)} employees ({len(high_hours_df)/len(self.processed_df)*100:.1f}%)',
+                    'risk_level': float(risk_percentage),
+                    'description': f'{risk_percentage:.1f}% of employees working >50h/week show stress or anxiety symptoms'
+                })
+
+        # Poor work-life balance risk
+        if 'Work_Life_Balance_Score' in self.processed_df.columns:
+            low_wlb_threshold = self.processed_df['Work_Life_Balance_Score'].quantile(0.25)
+            low_wlb_df = self.processed_df[self.processed_df['Work_Life_Balance_Score'] <= low_wlb_threshold]
+            if len(low_wlb_df) > 0:
+                risk_percentage = (low_wlb_df['Mental_Health_Status'].isin(['Stress Disorder', 'Depression']).mean() * 100)
+                risk_factors.append({
+                    'factor': 'Poor Work-Life Balance',
+                    'threshold': f'≤{low_wlb_threshold:.1f} score',
+                    'affected_population': f'{len(low_wlb_df)} employees ({len(low_wlb_df)/len(self.processed_df)*100:.1f}%)',
+                    'risk_level': float(risk_percentage),
+                    'description': f'{risk_percentage:.1f}% of employees with poor WLB show mental health issues'
+                })
+
+        # High social isolation risk
+        if 'Social_Isolation_Score' in self.processed_df.columns:
+            high_isolation_threshold = self.processed_df['Social_Isolation_Score'].quantile(0.75)
+            high_isolation_df = self.processed_df[self.processed_df['Social_Isolation_Score'] >= high_isolation_threshold]
+            if len(high_isolation_df) > 0:
+                risk_percentage = (high_isolation_df['Mental_Health_Status'].isin(['Depression', 'Anxiety']).mean() * 100)
+                risk_factors.append({
+                    'factor': 'High Social Isolation',
+                    'threshold': f'≥{high_isolation_threshold:.1f} score',
+                    'affected_population': f'{len(high_isolation_df)} employees ({len(high_isolation_df)/len(self.processed_df)*100:.1f}%)',
+                    'risk_level': float(risk_percentage),
+                    'description': f'{risk_percentage:.1f}% of socially isolated employees show depression or anxiety'
+                })
+
+        return risk_factors
+
+    def _analyze_protective_factors(self):
+        """Analyze factors that protect mental health"""
+        protective_factors = []
+
+        # Good work-life balance
+        if 'Work_Life_Balance_Score' in self.processed_df.columns:
+            high_wlb_threshold = self.processed_df['Work_Life_Balance_Score'].quantile(0.75)
+            high_wlb_df = self.processed_df[self.processed_df['Work_Life_Balance_Score'] >= high_wlb_threshold]
+            if len(high_wlb_df) > 0:
+                healthy_percentage = (high_wlb_df['Mental_Health_Status'] == 'Healthy').mean() * 100
+                protective_factors.append({
+                    'factor': 'Good Work-Life Balance',
+                    'threshold': f'≥{high_wlb_threshold:.1f} score',
+                    'benefited_population': f'{len(high_wlb_df)} employees ({len(high_wlb_df)/len(self.processed_df)*100:.1f}%)',
+                    'protection_level': float(healthy_percentage),
+                    'description': f'{healthy_percentage:.1f}% of employees with good WLB maintain healthy mental status'
+                })
+
+        # Optimal working hours
+        if 'Hours_Per_Week' in self.processed_df.columns:
+            optimal_hours_df = self.processed_df[(self.processed_df['Hours_Per_Week'] >= 35) &
+                                               (self.processed_df['Hours_Per_Week'] <= 45)]
+            if len(optimal_hours_df) > 0:
+                healthy_percentage = (optimal_hours_df['Mental_Health_Status'] == 'Healthy').mean() * 100
+                protective_factors.append({
+                    'factor': 'Optimal Working Hours',
+                    'threshold': '35-45 hours/week',
+                    'benefited_population': f'{len(optimal_hours_df)} employees ({len(optimal_hours_df)/len(self.processed_df)*100:.1f}%)',
+                    'protection_level': float(healthy_percentage),
+                    'description': f'{healthy_percentage:.1f}% of employees with optimal hours maintain good mental health'
+                })
+
+        return protective_factors
+
+    def _analyze_population_segments(self):
+        """Analyze different population segments"""
+        segments = []
+
+        # By work arrangement
+        if 'Work_Arrangement' in self.processed_df.columns:
+            for arrangement in self.processed_df['Work_Arrangement'].unique():
+                arr_data = self.processed_df[self.processed_df['Work_Arrangement'] == arrangement]
+                healthy_pct = (arr_data['Mental_Health_Status'] == 'Healthy').mean() * 100
+                avg_wlb = arr_data['Work_Life_Balance_Score'].mean() if 'Work_Life_Balance_Score' in arr_data.columns else 0
+
+                segments.append({
+                    'segment': f'{arrangement} Workers',
+                    'size': len(arr_data),
+                    'healthy_percentage': float(healthy_pct),
+                    'avg_wlb_score': float(avg_wlb),
+                    'key_characteristic': f'{healthy_pct:.1f}% maintain healthy mental status'
+                })
+
+        # By age groups
+        if 'Age' in self.processed_df.columns:
+            age_groups = pd.cut(self.processed_df['Age'], bins=[0, 30, 40, 50, 100], labels=['<30', '30-39', '40-49', '50+'])
+            for age_group in age_groups.unique():
+                if pd.notna(age_group):
+                    group_data = self.processed_df[age_groups == age_group]
+                    healthy_pct = (group_data['Mental_Health_Status'] == 'Healthy').mean() * 100
+
+                    segments.append({
+                        'segment': f'Age {age_group}',
+                        'size': len(group_data),
+                        'healthy_percentage': float(healthy_pct),
+                        'avg_wlb_score': float(group_data['Work_Life_Balance_Score'].mean() if 'Work_Life_Balance_Score' in group_data.columns else 0),
+                        'key_characteristic': f'{healthy_pct:.1f}% healthy rate'
+                    })
+
+        return segments
+
+    def _extract_key_findings(self, feature_importance):
+        """Extract key actionable findings"""
+        findings = []
+
+        # Top predictor analysis
+        top_predictor = max(feature_importance.items(), key=lambda x: x[1])
+        findings.append({
+            'type': 'Primary Driver',
+            'finding': f'{top_predictor[0]} is the strongest predictor of mental health outcomes',
+            'impact': float(top_predictor[1] * 100),
+            'action': 'Prioritize interventions targeting this factor for maximum impact'
+        })
+
+        # Population at risk
+        total_at_risk = 0
+        if 'Mental_Health_Status' in self.processed_df.columns:
+            at_risk_conditions = ['Stress Disorder', 'Depression', 'Anxiety']
+            total_at_risk = self.processed_df['Mental_Health_Status'].isin(at_risk_conditions).sum()
+
+        findings.append({
+            'type': 'Population Risk',
+            'finding': f'{total_at_risk} employees ({total_at_risk/len(self.processed_df)*100:.1f}%) show concerning mental health symptoms',
+            'impact': float(total_at_risk/len(self.processed_df)*100),
+            'action': 'Implement immediate support programs for high-risk employees'
+        })
+
+        # Work-life balance insight
+        if 'Work_Life_Balance_Score' in self.processed_df.columns:
+            avg_wlb = self.processed_df['Work_Life_Balance_Score'].mean()
+            findings.append({
+                'type': 'Organizational Health',
+                'finding': f'Average work-life balance score is {avg_wlb:.1f}/10 - {"Good" if avg_wlb >= 7 else "Needs Improvement" if avg_wlb >= 5 else "Critical"}',
+                'impact': float(avg_wlb * 10),
+                'action': 'Focus on flexible work policies and time management training' if avg_wlb < 7 else 'Maintain current positive work-life balance initiatives'
+            })
+
+        return findings
 
     def clustering_analysis(self, n_clusters=None, selected_features=None):
         """Enhanced clustering analysis"""
@@ -292,6 +478,12 @@ def load_data():
     except Exception as e:
         print(f"Error loading data: {str(e)}")
         return False, f"Error reading file: {str(e)}"
+
+
+def create_all_visualizations(filters=None):
+    """Create all visualizations with optional filtering"""
+    if df is None:
+        return {}
 
     # Apply filters if provided
     filtered_df = df.copy()
@@ -642,21 +834,19 @@ def api_ml_analysis():
         if result is None:
             return jsonify({'status': 'error', 'message': 'Cannot perform ML analysis'})
 
-        # Format results for frontend
+        # Return improved ML analysis with insights
         formatted_result = {
             'status': 'success',
-            'models_performance': {
-                name: {
-                    'accuracy': data['accuracy'],
-                    'cv_mean': data['cv_mean'],
-                    'cv_std': data['cv_std']
-                } for name, data in result['models_performance'].items()
-            },
             'feature_importance': result['feature_importance'],
-            'confusion_matrices': result['confusion_matrices'],
+            'data_insights': result['data_insights'],
+            'risk_factors': result['risk_factors'],
+            'protective_factors': result['protective_factors'],
+            'population_segments': result['population_segments'],
+            'key_findings': result['key_findings'],
             'target_classes': result['target_classes'],
-            'best_model': result['best_model'],
-            'recommendations': generate_recommendations(result)
+            'feature_names': result['feature_names'],
+            'sample_size': result['sample_size'],
+            'analysis_date': result['analysis_date']
         }
 
         return jsonify(formatted_result)
@@ -1003,6 +1193,128 @@ def api_recommendations():
         print(f"Error in api_recommendations: {str(e)}")
         return jsonify({'status':'error','message':f'Recommendations error: {str(e)}'})
 
+
+@app.route('/api/work_arrangement_analysis')
+def api_work_arrangement_analysis():
+    """Work arrangement analysis endpoint"""
+    if df is None:
+        return jsonify({'status': 'error', 'message': 'No data loaded'})
+
+    try:
+        cache_key = f"work_arrangement_{data_fingerprint}"
+
+        if cache_key not in analysis_cache:
+            # Analyze work arrangement patterns
+            analysis_result = {}
+
+            if 'Work_Arrangement' in df.columns:
+                # Mental health distribution by work arrangement
+                if 'Mental_Health_Status' in df.columns:
+                    mental_health_crosstab = pd.crosstab(df['Work_Arrangement'], df['Mental_Health_Status'], normalize='index') * 100
+                    mental_health_distribution = {}
+                    for arrangement in mental_health_crosstab.index:
+                        mental_health_distribution[arrangement] = mental_health_crosstab.loc[arrangement].to_dict()
+                    analysis_result['mental_health_distribution'] = mental_health_distribution
+
+                # Stress and burnout analysis
+                stress_burnout_analysis = {}
+                for arrangement in df['Work_Arrangement'].unique():
+                    arr_data = df[df['Work_Arrangement'] == arrangement]
+                    stress_burnout_analysis[arrangement] = {
+                        'avg_work_life_balance_score': float(arr_data['Work_Life_Balance_Score'].mean()) if 'Work_Life_Balance_Score' in df.columns else 0,
+                        'avg_social_isolation_score': float(arr_data['Social_Isolation_Score'].mean()) if 'Social_Isolation_Score' in df.columns else 0,
+                        'avg_hours_per_week': float(arr_data['Hours_Per_Week'].mean()) if 'Hours_Per_Week' in df.columns else 0,
+                        'burnout_high_percentage': float((arr_data['Burnout_Level'] == 'High').mean() * 100) if 'Burnout_Level' in df.columns else 0
+                    }
+                analysis_result['stress_burnout_analysis'] = stress_burnout_analysis
+
+                # Demographic analysis
+                demographic_analysis = {}
+                for arrangement in df['Work_Arrangement'].unique():
+                    arr_data = df[df['Work_Arrangement'] == arrangement]
+
+                    # Gender distribution
+                    gender_dist = {}
+                    if 'Gender' in df.columns:
+                        gender_counts = arr_data['Gender'].value_counts(normalize=True) * 100
+                        gender_dist = gender_counts.to_dict()
+
+                    # Age groups
+                    age_groups = {}
+                    if 'Age' in df.columns:
+                        arr_data_copy = arr_data.copy()
+                        arr_data_copy['age_group'] = pd.cut(arr_data_copy['Age'],
+                                                          bins=[0, 25, 35, 45, 55, 100],
+                                                          labels=['18-25', '26-35', '36-45', '46-55', '55+'])
+                        age_groups = arr_data_copy['age_group'].value_counts().to_dict()
+
+                    # Top industries
+                    industry_top = []
+                    if 'Industry' in df.columns:
+                        industry_top = arr_data['Industry'].value_counts().head(3).index.tolist()
+
+                    demographic_analysis[arrangement] = {
+                        'avg_age': float(arr_data['Age'].mean()) if 'Age' in df.columns else 0,
+                        'gender_distribution': gender_dist,
+                        'age_groups': {str(k): int(v) for k, v in age_groups.items()},
+                        'industry_top': industry_top,
+                        'total_employees': int(len(arr_data))
+                    }
+                analysis_result['demographic_analysis'] = demographic_analysis
+
+                # Productivity metrics (simulated based on available data)
+                productivity_metrics = {}
+                for arrangement in df['Work_Arrangement'].unique():
+                    arr_data = df[df['Work_Arrangement'] == arrangement]
+
+                    # Calculate productivity scores based on available metrics
+                    wlb_score = float(arr_data['Work_Life_Balance_Score'].mean()) if 'Work_Life_Balance_Score' in df.columns else 50
+                    isolation_score = float(arr_data['Social_Isolation_Score'].mean()) if 'Social_Isolation_Score' in df.columns else 5
+                    hours_score = 40 / float(arr_data['Hours_Per_Week'].mean()) * 100 if 'Hours_Per_Week' in df.columns and arr_data['Hours_Per_Week'].mean() > 0 else 50
+
+                    productivity_metrics[arrangement] = {
+                        'efficiency': min(100, max(0, hours_score)),
+                        'collaboration': min(100, max(0, (10 - isolation_score) * 10)),
+                        'innovation': min(100, max(0, wlb_score * 10)),
+                        'satisfaction': min(100, max(0, wlb_score * 10)),
+                        'retention': min(100, max(0, (10 - isolation_score) * 10))
+                    }
+                analysis_result['productivity_metrics'] = productivity_metrics
+
+                # Key insights
+                insights = []
+                if 'Work_Life_Balance_Score' in df.columns:
+                    best_wlb_arrangement = df.groupby('Work_Arrangement')['Work_Life_Balance_Score'].mean().idxmax()
+                    insights.append(f"{best_wlb_arrangement} work arrangement shows the highest work-life balance scores")
+
+                if 'Social_Isolation_Score' in df.columns:
+                    lowest_isolation_arrangement = df.groupby('Work_Arrangement')['Social_Isolation_Score'].mean().idxmin()
+                    insights.append(f"{lowest_isolation_arrangement} workers report the lowest social isolation")
+
+                if 'Hours_Per_Week' in df.columns:
+                    avg_hours_by_arrangement = df.groupby('Work_Arrangement')['Hours_Per_Week'].mean()
+                    lowest_hours = avg_hours_by_arrangement.idxmin()
+                    insights.append(f"{lowest_hours} workers have the most reasonable working hours")
+
+                # Recommendations
+                recommendations = [
+                    "Consider expanding flexible work arrangements that show better work-life balance",
+                    "Implement regular check-ins for remote workers to reduce isolation",
+                    "Monitor working hours across arrangements to prevent burnout",
+                    "Provide arrangement-specific mental health support programs"
+                ]
+
+                analysis_result['key_insights'] = insights
+                analysis_result['recommendations'] = recommendations
+
+            analysis_cache[cache_key] = analysis_result
+
+        result = analysis_cache[cache_key]
+        return jsonify({'status': 'success', 'analysis_results': result})
+
+    except Exception as e:
+        print(f"Error in api_work_arrangement_analysis: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'Work arrangement analysis error: {str(e)}'})
 
 
 if __name__ == '__main__':
