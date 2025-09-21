@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+
+{% block title %}Hypothesis Testing - WorkWell{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 fw-bold text-primary">
+                <i class="fas fa-flask"></i> Statistical Hypothesis Testing
+            </h1>
+            <p class="lead text-muted">Evidence-based insights through rigorous statistical analysis</p>
+        </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card border-primary">
+                <div class="card-body text-center">
+                    <h3 class="stat-number text-primary">5</h3>
+                    <p class="mb-0">Tests Performed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-success">
+                <div class="card-body text-center">
+                    <h3 class="stat-number text-success" id="significant-count">0</h3>
+                    <p class="mb-0">Significant Results</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-warning">
+                <div class="card-body text-center">
+                    <h3 class="stat-number text-warning">α = 0.05</h3>
+                    <p class="mb-0">Significance Level</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-info">
+                <div class="card-body text-center">
+                    <h3 class="stat-number text-info">95%</h3>
+                    <p class="mb-0">Confidence Level</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Results -->
+    <div class="accordion" id="hypothesisAccordion">
+        <!-- Test 1: Remote Work vs Burnout -->
+        <div class="accordion-item mb-3">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#test1" aria-expanded="true">
+                    <div class="d-flex justify-content-between w-100 me-3">
+                        <span>
+                            <i class="fas fa-laptop-house me-2"></i>
+                            <strong>H₁: Remote workers have lower burnout levels</strong>
+                        </span>
+                        <span class="badge bg-secondary" id="test1-result">Not Run</span>
+                    </div>
+                </button>
+            </h2>
+            <div id="test1" class="accordion-collapse collapse show" data-bs-parent="#hypothesisAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-vial me-2"></i>Test Method</h6>
+                                    <p class="mb-2">Mann-Whitney U Test</p>
+                                    <h6><i class="fas fa-users me-2"></i>Sample Sizes</h6>
+                                    <p class="mb-2" id="test1-samples">-</p>
+                                    <h6><i class="fas fa-calculator me-2"></i>Test Statistic</h6>
+                                    <p class="mb-2" id="test1-statistic">-</p>
+                                    <h6><i class="fas fa-chart-line me-2"></i>P-value</h6>
+                                    <p class="mb-2" id="test1-pvalue">-</p>
+                                    <h6><i class="fas fa-arrows-alt me-2"></i>Effect Size</h6>
+                                    <p class="mb-0" id="test1-effect">-</p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-primary w-100" onclick="runTest('remote_burnout')" data-bs-toggle="tooltip" title="Run statistical test for remote work vs burnout">
+                                    <i class="fas fa-play me-2"></i>Run Test
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="chart-container">
+                                <div id="test1-chart" style="height: 400px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <strong><i class="fas fa-lightbulb me-2"></i>Interpretation:</strong>
+                                <span id="test1-interpretation">Click "Run Test" to see results</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 2: Gender vs Work-Life Balance -->
+        <div class="accordion-item mb-3">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#test2">
+                    <div class="d-flex justify-content-between w-100 me-3">
+                        <span>
+                            <i class="fas fa-venus-mars me-2"></i>
+                            <strong>H₂: Gender affects work-life balance scores</strong>
+                        </span>
+                        <span class="badge bg-secondary" id="test2-result">Not Run</span>
+                    </div>
+                </button>
+            </h2>
+            <div id="test2" class="accordion-collapse collapse" data-bs-parent="#hypothesisAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-vial me-2"></i>Test Method</h6>
+                                    <p class="mb-2">Independent T-Test</p>
+                                    <h6><i class="fas fa-male me-2"></i>Male Mean</h6>
+                                    <p class="mb-2" id="test2-male">-</p>
+                                    <h6><i class="fas fa-female me-2"></i>Female Mean</h6>
+                                    <p class="mb-2" id="test2-female">-</p>
+                                    <h6><i class="fas fa-chart-line me-2"></i>P-value</h6>
+                                    <p class="mb-2" id="test2-pvalue">-</p>
+                                    <h6><i class="fas fa-arrows-alt me-2"></i>Cohen's d</h6>
+                                    <p class="mb-0" id="test2-effect">-</p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-primary w-100" onclick="runTest('gender_balance')" data-bs-toggle="tooltip" title="Run statistical test for gender vs work-life balance">
+                                    <i class="fas fa-play me-2"></i>Run Test
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="chart-container">
+                                <div id="test2-chart" style="height: 400px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <strong><i class="fas fa-lightbulb me-2"></i>Interpretation:</strong>
+                                <span id="test2-interpretation">Click "Run Test" to see results</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 3: Age vs Mental Health -->
+        <div class="accordion-item mb-3">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#test3">
+                    <div class="d-flex justify-content-between w-100 me-3">
+                        <span>
+                            <i class="fas fa-user-clock me-2"></i>
+                            <strong>H₃: Age groups differ in mental health status</strong>
+                        </span>
+                        <span class="badge bg-secondary" id="test3-result">Not Run</span>
+                    </div>
+                </button>
+            </h2>
+            <div id="test3" class="accordion-collapse collapse" data-bs-parent="#hypothesisAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-vial me-2"></i>Test Methods</h6>
+                                    <p class="mb-2">Chi-square & ANOVA</p>
+                                    <h6><i class="fas fa-calculator me-2"></i>Chi-square Statistic</h6>
+                                    <p class="mb-2" id="test3-chi2">-</p>
+                                    <h6><i class="fas fa-chart-line me-2"></i>P-value</h6>
+                                    <p class="mb-2" id="test3-pvalue">-</p>
+                                    <h6><i class="fas fa-arrows-alt me-2"></i>Cramér's V</h6>
+                                    <p class="mb-2" id="test3-cramers">-</p>
+                                    <h6><i class="fas fa-chart-bar me-2"></i>F-statistic</h6>
+                                    <p class="mb-0" id="test3-fstat">-</p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-primary w-100" onclick="runTest('age_mental_health')" data-bs-toggle="tooltip" title="Run statistical test for age vs mental health">
+                                    <i class="fas fa-play me-2"></i>Run Test
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="chart-container">
+                                <div id="test3-chart" style="height: 400px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <strong><i class="fas fa-lightbulb me-2"></i>Interpretation:</strong>
+                                <span id="test3-interpretation">Click "Run Test" to see results</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 4: Industry vs Working Hours -->
+        <div class="accordion-item mb-3">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#test4">
+                    <div class="d-flex justify-content-between w-100 me-3">
+                        <span>
+                            <i class="fas fa-industry me-2"></i>
+                            <strong>H₄: Industries differ in average working hours</strong>
+                        </span>
+                        <span class="badge bg-secondary" id="test4-result">Not Run</span>
+                    </div>
+                </button>
+            </h2>
+            <div id="test4" class="accordion-collapse collapse" data-bs-parent="#hypothesisAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-vial me-2"></i>Test Method</h6>
+                                    <p class="mb-2">Kruskal-Wallis Test</p>
+                                    <h6><i class="fas fa-calculator me-2"></i>H-statistic</h6>
+                                    <p class="mb-2" id="test4-statistic">-</p>
+                                    <h6><i class="fas fa-chart-line me-2"></i>P-value</h6>
+                                    <p class="mb-2" id="test4-pvalue">-</p>
+                                    <h6><i class="fas fa-arrows-alt me-2"></i>Eta Squared</h6>
+                                    <p class="mb-2" id="test4-eta">-</p>
+                                    <h6><i class="fas fa-building me-2"></i>Industries Compared</h6>
+                                    <p class="mb-0" id="test4-count">-</p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-primary w-100" onclick="runTest('industry_hours')" data-bs-toggle="tooltip" title="Run statistical test for industry vs working hours">
+                                    <i class="fas fa-play me-2"></i>Run Test
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="chart-container">
+                                <div id="test4-chart" style="height: 400px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <strong><i class="fas fa-lightbulb me-2"></i>Interpretation:</strong>
+                                <span id="test4-interpretation">Click "Run Test" to see results</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 5: Salary vs Social Isolation -->
+        <div class="accordion-item mb-3">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#test5">
+                    <div class="d-flex justify-content-between w-100 me-3">
+                        <span>
+                            <i class="fas fa-dollar-sign me-2"></i>
+                            <strong>H₅: Salary correlates with social isolation</strong>
+                        </span>
+                        <span class="badge bg-secondary" id="test5-result">Not Run</span>
+                    </div>
+                </button>
+            </h2>
+            <div id="test5" class="accordion-collapse collapse" data-bs-parent="#hypothesisAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-vial me-2"></i>Test Method</h6>
+                                    <p class="mb-2">Spearman Correlation</p>
+                                    <h6><i class="fas fa-calculator me-2"></i>Correlation (ρ)</h6>
+                                    <p class="mb-2" id="test5-correlation">-</p>
+                                    <h6><i class="fas fa-chart-line me-2"></i>P-value</h6>
+                                    <p class="mb-2" id="test5-pvalue">-</p>
+                                    <h6><i class="fas fa-arrow-right me-2"></i>Direction</h6>
+                                    <p class="mb-2" id="test5-direction">-</p>
+                                    <h6><i class="fas fa-arrows-alt me-2"></i>Strength</h6>
+                                    <p class="mb-0" id="test5-strength">-</p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-primary w-100" onclick="runTest('salary_isolation')" data-bs-toggle="tooltip" title="Run statistical test for salary vs social isolation">
+                                    <i class="fas fa-play me-2"></i>Run Test
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="chart-container">
+                                <div id="test5-chart" style="height: 400px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <strong><i class="fas fa-lightbulb me-2"></i>Interpretation:</strong>
+                                <span id="test5-interpretation">Click "Run Test" to see results</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>Test Summary & Recommendations
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-key me-2"></i>Key Findings</h5>
+                            <ul id="key-findings-list" class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-hourglass-half text-muted me-2"></i>
+                                    Run tests to see findings...
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-chart-line me-2"></i>Statistical Power</h5>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     style="width: 85%" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100">
+                                     Sample Size: Adequate
+                                </div>
+                            </div>
+                            <p class="small text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                With {{ "{:,}".format(3157) }} records, we have sufficient statistical power for most analyses.
+                                <br>
+                                <strong>Power Analysis:</strong> 80%+ power to detect medium effect sizes (d ≥ 0.5) at α = 0.05.
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Statistical Notes -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-light border">
+                                <h6><i class="fas fa-info-circle me-2"></i>Statistical Notes</h6>
+                                <div class="row small">
+                                    <div class="col-md-4">
+                                        <strong>Significance Level:</strong> α = 0.05<br>
+                                        <strong>Confidence Level:</strong> 95%<br>
+                                        <strong>Two-tailed Tests:</strong> Applied where appropriate
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Effect Size Guidelines:</strong><br>
+                                        Small: d = 0.2, r = 0.1<br>
+                                        Medium: d = 0.5, r = 0.3<br>
+                                        Large: d = 0.8, r = 0.5
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Multiple Comparisons:</strong><br>
+                                        Consider Bonferroni correction<br>
+                                        for family-wise error control
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-success" onclick="runAllTests()" data-bs-toggle="tooltip" title="Execute all 5 hypothesis tests sequentially">
+                                    <i class="fas fa-play-circle me-2"></i>Run All Tests
+                                </button>
+                                <button class="btn btn-info" onclick="exportResults()" data-bs-toggle="tooltip" title="Export test results as JSON">
+                                    <i class="fas fa-download me-2"></i>Export Results
+                                </button>
+                                <button class="btn btn-warning" onclick="resetTests()" data-bs-toggle="tooltip" title="Clear all test results and start over">
+                                    <i class="fas fa-redo me-2"></i>Reset All
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="window.print()" data-bs-toggle="tooltip" title="Print this page">
+                                    <i class="fas fa-print me-2"></i>Print Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Keyboard Shortcuts Help -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info small mb-0">
+                                <i class="fas fa-keyboard me-2"></i>
+                                <strong>Keyboard Shortcuts:</strong>
+                                Ctrl+Enter (Run All), Ctrl+R (Reset), Ctrl+E (Export), Alt+1-5 (Individual Tests), Esc (Cancel)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="row mt-4" id="progress-section" style="display: none;">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border text-primary me-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Running Statistical Analysis...</h6>
+                            <div class="progress" style="width: 300px; height: 8px;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%" id="test-progress"></div>
+                            </div>
+                            <small class="text-muted mt-1" id="progress-text">Initializing tests...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.chart-container {
+    border-radius: 10px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.accordion-button {
+    font-size: 1.1rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.accordion-button:not(.collapsed) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 20px;
+}
+
+.alert-info {
+    border-left: 4px solid #3498db;
+    background: #f8f9fa;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 10px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+@media print {
+    .btn, .accordion-button, #progress-section {
+        display: none !important;
+    }
+
+    .accordion-collapse {
+        display: block !important;
+    }
+
+    .card {
+        break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #dee2e6 !important;
+    }
+}
+
+/* Custom animations for results */
+.result-animate {
+    animation: slideInUp 0.5s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.test-running .card-body {
+    position: relative;
+}
+
+.test-running .card-body::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.8);
+    z-index: 1;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/hypothesis.js') }}"></script>
+{% endblock %}
