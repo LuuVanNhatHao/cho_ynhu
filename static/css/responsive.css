@@ -1,0 +1,200 @@
+/* Responsive CSS - Media queries and mobile optimizations */
+
+/* Tablet and below (max-width: 768px) */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+
+    .header-section h1 {
+        font-size: 2rem;
+    }
+
+    .stats-card .value {
+        font-size: 1.6rem;
+    }
+
+    .auto-loading-status {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+
+    .feature-card {
+        margin: 10px 0;
+    }
+
+    .chart-container {
+        padding: 15px;
+        margin: 15px 0;
+    }
+
+    .filter-container .row {
+        margin: 0;
+    }
+
+    .filter-container .col-md-3 {
+        margin-bottom: 15px;
+    }
+}
+
+/* Mobile (max-width: 576px) */
+@media (max-width: 576px) {
+    .header-section {
+        padding: 20px;
+    }
+
+    .header-section h1 {
+        font-size: 1.5rem;
+    }
+
+    .header-section p {
+        font-size: 0.9rem;
+    }
+
+    .btn-glass {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        margin: 5px;
+    }
+
+    .stats-card {
+        padding: 20px;
+    }
+
+    .stats-card .icon {
+        font-size: 1.8rem;
+    }
+
+    .stats-card .value {
+        font-size: 1.4rem;
+    }
+
+    .stats-card .label {
+        font-size: 0.85rem;
+    }
+
+    .chart-title {
+        font-size: 1.1rem;
+    }
+
+    .feature-icon {
+        font-size: 1.6rem;
+    }
+
+    .feature-title {
+        font-size: 1rem;
+    }
+
+    .feature-description {
+        font-size: 0.85rem;
+    }
+
+    .sidebar-toggle {
+        width: 40px;
+        height: 40px;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+}
+
+/* Large screens (min-width: 1200px) */
+@media (min-width: 1200px) {
+    .main-content {
+        max-width: 1400px;
+        margin-left: 300px;
+        margin-right: auto;
+    }
+
+    .header-section h1 {
+        font-size: 3rem;
+    }
+
+    .stats-card .value {
+        font-size: 2.2rem;
+    }
+}
+
+/* Extra large screens (min-width: 1400px) */
+@media (min-width: 1400px) {
+    .main-content {
+        max-width: 1600px;
+    }
+
+    .chart-container {
+        padding: 30px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .sidebar,
+    .sidebar-toggle,
+    .btn-glass,
+    .auto-loading-status {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+
+    .header-section {
+        page-break-after: avoid;
+    }
+
+    .chart-container {
+        page-break-inside: avoid;
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+
+    .stats-card,
+    .chart-container,
+    .feature-card {
+        background: white;
+        border: 1px solid #ddd;
+        box-shadow: none;
+    }
+}
+
+/* Hover effects for touch devices */
+@media (hover: none) {
+    .nav-item:hover,
+    .btn-glass:hover,
+    .feature-card:hover,
+    .stats-card:hover {
+        transform: none;
+    }
+
+    .nav-item:active,
+    .btn-glass:active {
+        transform: scale(0.98);
+    }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .header-section {
+        padding: 15px;
+    }
+
+    .header-section h1 {
+        font-size: 1.8rem;
+    }
+
+    .stats-card {
+        padding: 15px;
+    }
+}
